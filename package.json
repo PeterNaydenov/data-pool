@@ -8,6 +8,10 @@
     "test": "mocha test",
     "cover": "c8 mocha test"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PeterNaydenov/data-pool.git"
+  },
   "author": "Peter Naydenov",
   "license": "MIT",
   "keywords": ["data","cache"],

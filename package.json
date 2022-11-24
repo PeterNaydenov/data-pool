@@ -1,6 +1,6 @@
 {
   "name": "@peter.naydenov/data-pool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Data-pool is a data-layer for node apps and single page application",
   "main": "./src/main.js",
   "type": "module",
@@ -14,8 +14,10 @@
   },
   "author": "Peter Naydenov",
   "license": "MIT",
-  "keywords": ["data","cache"],
-
+  "keywords": [
+    "data",
+    "cache"
+  ],
   "devDependencies": {
     "c8": "^7.12.0",
     "chai": "^4.3.7",

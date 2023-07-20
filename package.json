@@ -1,6 +1,6 @@
 {
   "name": "@peter.naydenov/data-pool",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Data-pool is a data-layer for node apps and single page application",
   "main": "./src/main.js",
   "type": "module",

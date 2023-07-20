@@ -1,4 +1,5 @@
 .DS_Store
 .gitignore
+coverage
 package-lock.json
 test

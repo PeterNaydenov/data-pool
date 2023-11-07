@@ -1,5 +1,11 @@
 # Release History
 
+
+### 1.0.5 (2023-11-07)
+- [x] Dependency update. Ask-for-promises@1.0.5;
+
+
+
 ### 1.0.0 (2022-11-07)
  - [x] Initial code;
  - [x] Test package;

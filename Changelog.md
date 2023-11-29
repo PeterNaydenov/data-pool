@@ -2,7 +2,7 @@
 
 
 ### 1.0.5 (2023-11-07)
-- [x] Dependency update. Ask-for-promises@1.0.5;
+- [x] Dependency update. Ask-for-promises@1.5.0;
 
 
 

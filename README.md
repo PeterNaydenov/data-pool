@@ -2,6 +2,8 @@
 
 ![version](https://img.shields.io/github/package-json/v/peterNaydenov/data-pool)
 ![license](https://img.shields.io/github/license/peterNaydenov/data-pool)
+![GitHub issues](https://img.shields.io/github/issues/peterNaydenov/data-pool)
+![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40peter.naydenov%2Fdata-pool)
 
 `Data-pool` is a data-layer for node apps and single page application (**SPA**). Data-pool will simplify data maintanance with :
 

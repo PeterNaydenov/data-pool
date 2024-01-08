@@ -1,8 +1,8 @@
-import chai from 'chai'
-import dataPool from '../src/main.js'
+import { expect }    from 'chai'
+import dataPool      from '../src/main.js'
 import askForPromise from 'ask-for-promise'
 
-const expect = chai.expect;
+
 
 describe ( 'Data-pool', done => {
 

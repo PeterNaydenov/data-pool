@@ -2,6 +2,14 @@
 
 
 
+### 1.0.7 (2024-05-16)
+- [x] Dependency update. Ask-for-promise@2.0.3
+- [x] Dependency update. @peter.naydenov/walk@4.2.3;
+- [x] Dependency update. @peter.naydenov/notice@2.3.1;
+- [x] Dev dependencies update. C8@9.1.0, Chai@5.1.1, Mocha@10.4.0;
+
+
+
 ### 1.0.6 (2024-01-08)
 - [x] Dependency update. Ask-for-promises@2.0.0;
 - [x] Dependency update. @peter.naydenov/walk@4.2.1;

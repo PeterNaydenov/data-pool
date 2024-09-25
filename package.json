@@ -22,7 +22,7 @@
   "devDependencies": {
     "c8": "^10.1.2",
     "chai": "^5.1.1",
-    "mocha": "^10.6.0"
+    "mocha": "^10.7.3"
   },
   "dependencies": {
     "@peter.naydenov/notice": "^2.3.1",

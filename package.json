@@ -21,8 +21,8 @@
   ],
   "devDependencies": {
     "c8": "^10.1.2",
-    "chai": "^5.1.1",
-    "mocha": "^10.7.3"
+    "chai": "^5.1.2",
+    "mocha": "^10.8.2"
   },
   "dependencies": {
     "@peter.naydenov/notice": "^2.3.1",

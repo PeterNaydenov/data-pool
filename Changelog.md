@@ -1,6 +1,11 @@
 # Release History
 
 
+### 1.0.8 (2024-12--08)
+- [x] Dependency update. @peter.naydenov/walk@5.0.0;
+- [x] Dev dependencies update. Mocha@11.0.1
+
+
 
 ### 1.0.7 (2024-05-16)
 - [x] Dependency update. Ask-for-promise@2.0.3

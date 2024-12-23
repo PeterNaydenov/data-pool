@@ -14,7 +14,7 @@ function getData ( dependencies ) {
             , readKey
         } = dependencies;
 
-return function getData (store, k, ...args) {
+return function getData ( store, k, ...args) {
     const 
               { key, location } = readKey ( k )
             , task = askForPromise ()
@@ -24,7 +24,7 @@ return function getData (store, k, ...args) {
             , interval = updateRequest[ID] || false
             , ttl = ttlRequest [ID]
             ;
-        
+      
         let 
               existingStore = db[store] ? true : false
             , cache =  false

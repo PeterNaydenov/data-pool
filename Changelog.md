@@ -1,6 +1,12 @@
 # Release History
 
 
+
+### 1.0.11 ( 2025-01-26)
+- [x] Dependency update. @peter.naydenov/notice@2.4.0;
+
+
+
 ### 1.0.10 ( 2024-12-19)
 - [x] Dependency update. @peter.naydenov/walk@5.0.1;
 - [x] Dependency update. ask-for-promise@3.0.1;

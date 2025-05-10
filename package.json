@@ -25,7 +25,7 @@
     "mocha": "^11.2.2"
   },
   "dependencies": {
-    "@peter.naydenov/notice": "^2.4.0",
+    "@peter.naydenov/notice": "^2.4.1",
     "@peter.naydenov/walk": "^5.0.1",
     "ask-for-promise": "^3.0.1"
   },

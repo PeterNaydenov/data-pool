@@ -9,6 +9,8 @@ Version 2 is coming to make library more developer friendly.
 - Single request for multiple props from different stores;
 - Change in function arguments related to store/property handling;
 - Data properties as a signals;
+- Computed properties;
+- Store effects;
 
 
 

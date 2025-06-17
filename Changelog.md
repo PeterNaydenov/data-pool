@@ -1,6 +1,18 @@
 # Release History
 
 
+### 2.0.0 ( xxxx-xx-xx )
+Version 2 is coming to make library more developer friendly. 
+- Method 'get' will return synchroneous results. Async requests will return a promise;
+- Method 'getAsync' will return a promise as method 'get' did in version 1;
+- Single request for multiple properties from a store;
+- Single request for multiple props from different stores;
+- Change in function arguments related to store/property handling;
+- Data properties as a signals;
+
+
+
+
 
 ### 1.0.12 ( 2025-05-10)
 - [x] Dependency update. @peter.naydenov/notice@2.4.1;

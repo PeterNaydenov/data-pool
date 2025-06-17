@@ -18,6 +18,7 @@
 import askForPromise from 'ask-for-promise'
 import walk          from '@peter.naydenov/walk'
 import notice        from '@peter.naydenov/notice'
+import signals       from '@peter.naydenov/signals'
 
 import readKey       from './readKey.js'
 import getData       from './getData.js'
@@ -33,6 +34,7 @@ import updateData    from "./updateData.js"
 function createDataStore () {
     // *** Creates internal data-structures
     const eBus = notice ();
+    const nest = signals ()
     return { 
               db             : {}   // Stores are here
             , apiDB          : {}   // APIs
@@ -45,6 +47,7 @@ function createDataStore () {
             , walk
             , askForPromise
             , eBus
+            , nest
             , readKey
         }
 } // CreateDataStore func.

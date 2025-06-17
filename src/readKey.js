@@ -1,6 +1,6 @@
 
 function readKey ( k ) {
-        let key,ext, location;
+        let key, ext, location;
         if ( typeof k !== 'string' ) {
                     key = k[0]
                     ext = k[1]

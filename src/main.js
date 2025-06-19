@@ -34,7 +34,6 @@ import updateData    from "./updateData.js"
 function createDataStore () {
     // *** Creates internal data-structures
     const eBus = notice ();
-    const nest = signals ()
     return { 
               db             : {}   // Stores are here
             , apiDB          : {}   // APIs
@@ -47,7 +46,7 @@ function createDataStore () {
             , walk
             , askForPromise
             , eBus
-            , nest
+            , signals
             , readKey
         }
 } // CreateDataStore func.

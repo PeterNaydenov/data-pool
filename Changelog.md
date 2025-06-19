@@ -11,6 +11,8 @@ Version 2 is coming to make library more developer friendly.
 - Define a store as a signal store;
 - Computed properties in signal store;
 - Store effects for signal store;
+- Set a store-key will return a boolean;
+- Set a store-key will receive an argument - validation function;
 
 
 

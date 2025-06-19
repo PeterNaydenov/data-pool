@@ -26,7 +26,7 @@ return function getData ( store, k, ...args) {
             ;
       
         let 
-              existingStore = db[store] ? true : false
+              existingStore = db.hasOwnProperty(store) ? true : false
             , cache =  false
             ;
         if ( existingStore && withCache )   cache = db[store].hasOwnProperty(location) ? true : false

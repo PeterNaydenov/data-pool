@@ -20,20 +20,25 @@ import walk          from '@peter.naydenov/walk'
 import notice        from '@peter.naydenov/notice'
 import signals       from '@peter.naydenov/signals'
 
-import readKey       from './readKey.js'
-import getData       from './getData.js'
-import setData       from './setData.js'
-import setDummy      from './setDummy.js'
-import listStores    from './listStores.js'
-import setUpdate     from "./setUpdate.js"
-import removeUpdates from "./removeUpdates.js"
-import updateData    from "./updateData.js"
+import readKey        from './readKey.js'
+import getData        from './getData.js'
+import getDataAsync   from './getDataAsync.js'
+import setData        from './setData.js'
+import setSignalStore from './setSignalStore.js'
+import setDummy       from './setDummy.js'
+import listStores     from './listStores.js'
+import setUpdate      from "./setUpdate.js"
+import removeUpdates  from "./removeUpdates.js"
+import updateData     from "./updateData.js"
 
 
 
 function createDataStore () {
     // *** Creates internal data-structures
-    const eBus = notice ();
+    const 
+          eBus = notice ()
+        , signalNest = signals () 
+        ;
     return { 
               db             : {}   // Stores are here
             , apiDB          : {}   // APIs
@@ -42,11 +47,13 @@ function createDataStore () {
             , timeouts       : {}   // Active TTL timeouts object
             , intervals      : {}   // Active update intervals object
             , dummyRequest   : {}   // store/key that will provide always dummy data
+            , signalStores   : []   // Stores that will be used for signals
+            , validationStore : {}   // Validation functions
             , noCacheRequest : new Set()  // store/key that should not have cache
             , walk
             , askForPromise
             , eBus
-            , signals
+            , signalNest
             , readKey
         }
 } // CreateDataStore func.
@@ -72,9 +79,12 @@ const API = {   // Data-pool API
                                     if ( !dependencies.db[store]           )   return false
                                     if ( !dependencies.db[store][location] )   return false
                                     return true
-                                }  
+                                } 
+                             
             , get          : getData ( dependencies )
             , set          : setData ( dependencies )
+            , getAsync     : getDataAsync ( dependencies )
+            , setSignalStore : setSignalStore ( dependencies )   // Set store for signal store
             , importStore  : (store,data) => dependencies.db[store] = walk({data})   // Add data as a store
             , exportStore  : (store     ) => dependencies.db[store] ? walk ({ data : dependencies.db[store] }) : null   // Export store as a data
             , on           : dependencies.eBus.on

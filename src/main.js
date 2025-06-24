@@ -83,12 +83,12 @@ const API = {   // Data-pool API
                                     return true
                                 } 
                              
-            , get          : getData ( dependencies )
-            , set          : setData ( dependencies )
-            , setComputed  : setComputed ( dependencies )
-            , setEffect    : setEffect ( dependencies )
-            , getAsync     : getDataAsync ( dependencies )
-            , setSignalStore : setSignalStore ( dependencies )   // Set store as a signal store
+            , get            : getData ( dependencies )
+            , getAsync       : getDataAsync ( dependencies )
+            , set            : setData ( dependencies )
+            , setComputed    : setComputed ( dependencies )
+            , setEffect      : setEffect ( dependencies )
+            , setSignalStore : setSignalStore ( dependencies )   // Set the store as a signal store
             , importStore  : (store,data) => {  // Add data as a store
                             if ( !dependencies.db[store] )   dependencies.db[store] = {}
                             if ( dependencies.signalStores.includes ( store ) ) {

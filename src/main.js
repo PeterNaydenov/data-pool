@@ -85,8 +85,27 @@ const API = {   // Data-pool API
             , set          : setData ( dependencies )
             , getAsync     : getDataAsync ( dependencies )
             , setSignalStore : setSignalStore ( dependencies )   // Set store for signal store
-            , importStore  : (store,data) => dependencies.db[store] = walk({data})   // Add data as a store
-            , exportStore  : (store     ) => dependencies.db[store] ? walk ({ data : dependencies.db[store] }) : null   // Export store as a data
+            , importStore  : (store,data) => {  // Add data as a store
+                            if ( !dependencies.db[store] )   dependencies.db[store] = {}
+                            if ( dependencies.signalStores.includes ( store ) ) {
+                                        Object.entries ( data ).forEach ( ([k,v]) => dependencies.db[store][k] = dependencies.signalNest.state ( v ) )
+                                }
+                            else {
+                                        dependencies.db[store] = walk({data})   
+                                }
+                } // importStore func. 
+            , exportStore  : (store     ) => {  // Export store as a data
+                        if ( !dependencies.db[store] )   return null
+                        if ( dependencies.signalStores.includes ( store ) ) {
+                                    return   Object.entries ( dependencies.db[store] ).reduce ( (res,[k,v]) => {
+                                                    res[k] = v.get ()
+                                                    return res
+                                                }, {})
+                            }
+                        else {
+                                    return walk ({ data : dependencies.db[store] })
+                           }                        
+                } // exportStore func.
             , on           : dependencies.eBus.on
             , addApi       : (income) => {
                                     let ups = Object.assign ( {}, income, dependencies.apiDB );

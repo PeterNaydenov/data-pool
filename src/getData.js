@@ -12,18 +12,15 @@ function getData ( dependencies ) {
             , walk
             , eBus
             , readKey
-            , signalNest
             , signalStores
             , validationStore
         } = dependencies;
 
-return function getData ( ks,  ...args ) {
-    // TODO: Make it works for multiple key/store values
+
+return function getData ( ks,  ...args ) {    
     // ks could be [keyList, store]
     // or [ [keyList, store], [keyList, store], ... ]
-    // const list = keyList.split(',').map ( k => k.trim () )
-    
-    if ( typeof ks[0] === 'string' )   ks = [ ks ]
+    if ( typeof ks[0] === 'string' )   ks = [ ks ]   // Unify the input data structure 
     const list = ks.reduce ( ( res, item ) => {
                                     const st = item[1] || 'default';
                                     let ls = item[0].split(',').map ( k => k.trim () )

@@ -24,6 +24,7 @@ import readKey        from './readKey.js'
 import getData        from './getData.js'
 import getDataAsync   from './getDataAsync.js'
 import setData        from './setData.js'
+import setComputed    from './setComputed.js'
 import setSignalStore from './setSignalStore.js'
 import setDummy       from './setDummy.js'
 import listStores     from './listStores.js'
@@ -83,8 +84,12 @@ const API = {   // Data-pool API
                              
             , get          : getData ( dependencies )
             , set          : setData ( dependencies )
+            , setComputed  : setComputed ( dependencies )
+            , setEffect : () => {
+// TODO:
+                   } // setEffect func.
             , getAsync     : getDataAsync ( dependencies )
-            , setSignalStore : setSignalStore ( dependencies )   // Set store for signal store
+            , setSignalStore : setSignalStore ( dependencies )   // Set store as a signal store
             , importStore  : (store,data) => {  // Add data as a store
                             if ( !dependencies.db[store] )   dependencies.db[store] = {}
                             if ( dependencies.signalStores.includes ( store ) ) {

@@ -5,9 +5,12 @@
 ![GitHub issues](https://img.shields.io/github/issues/peterNaydenov/data-pool)
 ![npm bundle size](https://img.shields.io/bundlephobia/minzip/%40peter.naydenov%2Fdata-pool)
 
-`Data-pool` is a data-layer for node apps and single page application (**SPA**). Data-pool will simplify data maintanance with :
+`Data-pool` is a data-layer for node apps and single page application (**SPA**). Data-pool will simplify data maintanance with:
 
-- Immutable data stores;
+- Multiple data stores;
+- Stores withimmutable data;
+- Signal stores with computed properties and effects;
+- API based stores;
 - Caching data records from Api requests;
 - Optional TTL for each data record;
 - Optional update schedule for each data record;
@@ -44,33 +47,36 @@ Now you are free to add and manipulate stores and data. For more details read th
 
 
 ```js
-  set           : 'Create new record'
-, get           : 'Returns existing data, or requesting it from related API'
-, addApi        : 'Associate one or more APIs with data-pool'
-, removeApi     : 'Remove associated API. Single API only'
-, list          : 'List stores with data'
-, has           : 'Checks if store or store-key exist. Returns a boolean: true/false'
-, importStore   : 'Add data as a store' 
-, exportStore   : 'Export store as a data'
-, on            : 'Watch for store changes' 
-, setDummy      : 'Define dummy source-data for store-key. Should be a function that returns a promise.'
-, removeDummy   : 'Remove dummy source-data.'
-, setTTL        : 'Set a TTL for a store-key record.'
-, removeTTL     : 'Remove a ttl record'
-, setUpdate     : 'Set recurring updates for specific API related record'
-, removeUpdate  : 'Remove recurring updates requests'
-, setNoCache    : 'Specify store-key records that should not have cache'
-, removeNoCache : 'Remove no cache setting per store-key'
+  set            : 'Create new record'
+, setComputed    : 'Create a computed property. Works only in signal stores'
+, setEffect      : 'Create an signal effect'
+, setSignalStore : 'Define one or more store names as signal stores'
+, get            : 'Returns existing data, or requesting it from related API'
+, getAsync       : 'Returns existing data as a promise.'
+, addApi         : 'Associate one or more APIs with data-pool'
+, removeApi      : 'Remove associated API. Single API only'
+, list           : 'List stores with data'
+, has            : 'Checks if store or store-key exist. Returns a boolean: true/false'
+, importStore    : 'Add data as a store' 
+, exportStore    : 'Export store as a data'
+, on             : 'Watch for store changes. Events' 
+, setDummy       : 'Define dummy source-data for store-key. Expect dummy as a function'
+, removeDummy    : 'Remove dummy source-data.'
+, setTTL         : 'Set a TTL for a store-key record.'
+, removeTTL      : 'Remove a ttl record'
+, setUpdate      : 'Set recurring updates for specific API related record'
+, removeUpdate   : 'Remove recurring updates requests'
+, setNoCache     : 'Specify store-key records that should not have cache'
+, removeNoCache  : 'Remove no cache setting per store-key'
 ```
 
 
 ### pool.set
 Creates a new data record in data pool.
 ```js
-pool.set ( storeName, key, data )
+pool.set ( [key, storeName], data )
 /**
  *  Arguments:
- *    - storeName: string(required). Name of the store;
  *    - key: string or tuple(required). 
  *             if it's a string -> data identifier
  *             if it's a tuple -> first element is the data identifier, 
@@ -79,9 +85,10 @@ pool.set ( storeName, key, data )
  *      results and we want to keep instead of overwrite them. Example: "getProduct"
  *      method can return product specification but we have a lot of products. We want
  *      to keep them in data-pool as a separate objects.
+ *    - storeName: string(optional). Name of the store. Default value is 'default';
  *    - data: Any(required). Provide any data that should be saved;
  * 
- *   Returns: void
+ *   Returns: Boolean
  * /
 
 ```
@@ -89,7 +96,7 @@ pool.set ( storeName, key, data )
 Example:
 
 ```js
- pool.set ( 'demo', 'name', 'Peter' )
+ pool.set ( ['name', 'demo'], 'Peter' )
  /**
   * 1: No store 'demo': 
   *  Will create store 'demo' and will set property 'name' to 'Peter'
@@ -104,30 +111,42 @@ Example:
 
 
 ### pool.get
-Returns a requested store/key. If there is no value and there is associated Api, will send request to the Api. Dummy values per store/key will overwrite the Api if they exists.
+Returns a requested data. If there is no value and there is associated Api, will send request to the Api. Dummy values per store/key will overwrite the Api if they exists.
 
 ```js
-pool.get ( storeName, key, ...other )
+pool.get ( [ key, storeName], ...other )
 /**
  *  Arguments:
  *     - storeName: string(required). Name of the store;
- *     - key: string or tuple(required). 
+ *     - key: string (required). 
  *             if it's a string -> data identifier
- *             if it's a tuple -> first element is the data identifier, 
- *                                second is the extension.
- *   Returns: Any<Promise>
+ *             key can contains the symbol '/' that will separate key from extensions
+ *   Returns: Any. The data
  * /
-
 ```
-
-Example:
+With `pool.get` is possible to get multiple properties of different stores and receive the result as an array.
 
 ```js
-  pool.get ( 'demo', 'name' )
-      .then ( r => {
-                // r = 'Peter'
-            })
+// here is the long way
+pool.get ( [ ['name', 'demo'], ['age', 'demo'], ['height', 'demo'], ['weight', 'metrics'] ] )
+
+// requests to same store can be organized like this
+pool.get ([ 
+              [ 'name,age,height', 'demo']
+            , ['weight', 'metrics'] 
+        ])
+
+// the response always will be an array
+// fields in order of the request [ 'name', 'age', 'height', 'weight']
+// ---> [ 'Peter', 20, 180 , 80 ]
+// if requested value does not exist, it will return null
+
+// if all requested values are from the same store you can simplify the request
+pool.get ( [ 'name,age,height', 'demo' ] )
+// single square bracket set is enough
 ```
+
+
 
 ### pool.addApi
 Register api in data-pool as source of information. Api name will become a store name and api methods will become keys. Key as a tuple represents methods that can return more that one result and records will need specification. 

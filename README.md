@@ -131,14 +131,14 @@ With `pool.get` is possible to get multiple properties of different stores and r
 pool.get ( [ ['name', 'demo'], ['age', 'demo'], ['height', 'demo'], ['weight', 'metrics'] ] )
 
 // requests to same store can be organized like this
-pool.get ([ 
+let [ name, age, height, weight ] = pool.get ([ 
               [ 'name,age,height', 'demo']
             , ['weight', 'metrics'] 
         ])
 
 // the response always will be an array
-// fields in order of the request [ 'name', 'age', 'height', 'weight']
 // ---> [ 'Peter', 20, 180 , 80 ]
+// With distructuring we can get name='Peter', age=20, height=180, weight=80
 // if requested value does not exist, it will return null
 
 // if all requested values are from the same store you can simplify the request
@@ -200,10 +200,10 @@ Example:
 ```js
   pool.removeApi ( 'user' )
  // Will remove association with userAPI from prev. example
- pool.get ( 'user', 'getDetails' )
+ pool.getAsync ([ 'getDetails', 'user'] )
      .then ( r => {
                     // Relation to the api is removed but store still exists!
-                    // 1. If store has record for 'user','getDetails' -> will return the result
+                    // 1. If store 'user' has record for 'getDetails' -> will return the result
                     // 2. If there is no record -> will return null. 
                 })
 ```
@@ -231,14 +231,12 @@ Accociation of the productAPI with data-pool will not create the store automatic
 Check if store or store/key exists.
 
 ```js
-  pool.has ( storeName, key )
+  pool.has ( [ keyList, storeName ])
   /**
    *  Arguments
    *  - storeName - string(required). Name of the store.
-   *  - key: string or tuple(optional). 
-   *             if it's a string -> data identifier
-   *             if it's a tuple -> first element is the data identifier, 
-   *                                second is the extension.
+   *  - keyList: coma separated strings(requested properties) or just a string(single requested property). 
+   *             if string has '/', first element is the data identifier, other elements are *             extensions.
    *  Returns: boolean.
    * /
 ```
@@ -273,12 +271,10 @@ const data = {
               , age : 48
             }
 pool.importStore ( 'yo', data )
-pool.get ( 'yo', 'name' )
-    .then ( r => {
-                // r === 'Peter'
-        })
-
+let name = pool.get ( [ 'name', 'yo'] )
+// name === 'Peter'
 ```
+
 
 
 ### pool.exportStore
@@ -292,6 +288,7 @@ pool.exportStore ( storeName )
  *  Returns : object
  * /
 ```
+
 
 
 ### pool.on

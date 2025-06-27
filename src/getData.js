@@ -14,20 +14,14 @@ function getData ( dependencies ) {
             , readKey
             , signalStores
             , validationStore
+            , setupListOfRequestedParams
         } = dependencies;
 
 
 return function getData ( ks,  ...args ) {    
     // ks could be [keyList, store]
-    // or [ [keyList, store], [keyList, store], ... ]
-    if ( typeof ks[0] === 'string' )   ks = [ ks ]   // Unify the input data structure 
-    const list = ks.reduce ( ( res, item ) => {
-                                    const st = item[1] || 'default';
-                                    let ls = item[0].split(',').map ( k => k.trim () )
-                                    ls.forEach ( k => res.push ( [k, st] ) )
-                                    return res
-                    },[] )
-
+    // or [ [keyList, store], [keyList, store], [ key, store]... ]
+    const list = setupListOfRequestedParams ( ks )
     let result = list.map ( ([k, store]) => {
                 const 
                           { key, location } = readKey ( k )

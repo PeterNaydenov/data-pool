@@ -34,6 +34,18 @@ import removeUpdates  from "./removeUpdates.js"
 import updateData     from "./updateData.js"
 
 
+function setupListOfRequestedParams ( ks) {
+            if ( typeof ks[0] === 'string' )   ks = [ ks ]   // Unify the input data structure 
+            const list = ks.reduce ( ( res, item ) => {
+                                            const st = item[1] || 'default';
+                                            let ls = item[0].split(',').map ( k => k.trim () )
+                                            ls.forEach ( k => res.push ( [k, st] ) )
+                                            return res
+                            },[] )
+            return list
+    } // setupListOfRequestedParams func.
+
+
 
 function createDataStore () {
     // *** Creates internal data-structures
@@ -56,6 +68,7 @@ function createDataStore () {
             , askForPromise
             , eBus
             , signalNest
+            , setupListOfRequestedParams
             , readKey
         }
 } // CreateDataStore func.
@@ -71,18 +84,22 @@ function dataPool () {
  *    - data can be related to API method
  *    
  */
+
+
+
     
 
 const API = {   // Data-pool API
               list         : listStores ( dependencies.db ) // list Stores
-            , has          : ( store, k ) => {   // Checks if store or store-key exist 
-                                    if ( !k )   return dependencies.db[store] ? true : false
-                                    const { location } = readKey ( k )
-                                    if ( !dependencies.db[store]           )   return false
-                                    if ( !dependencies.db[store][location] )   return false
-                                    return true
-                                } 
-                             
+            , has          : ( ks ) => {   // Checks if store or store-key exist 
+                                    const list = setupListOfRequestedParams ( ks )
+                                    return list.every ( ([k, store]) => {
+                                                const { location } = readKey ( k )
+                                                if ( !dependencies.db[store]           )   return false
+                                                if ( !dependencies.db[store][location] )   return false
+                                                return true
+                                            })
+                                } // has func. 
             , get            : getData ( dependencies )
             , getAsync       : getDataAsync ( dependencies )
             , set            : setData ( dependencies )

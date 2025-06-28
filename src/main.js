@@ -115,7 +115,7 @@ const API = {   // Data-pool API
                                         dependencies.db[store] = walk({data})   
                                 }
                 } // importStore func. 
-            , exportStore  : (store     ) => {  // Export store as a data
+            , exportStore  : ( store ) => {  // Export store as a data
                         if ( !dependencies.db[store] )   return null
                         if ( dependencies.signalStores.includes ( store ) ) {
                                     return   Object.entries ( dependencies.db[store] ).reduce ( (res,[k,v]) => {

@@ -1,6 +1,6 @@
 function setData ( dependencies ) {
     const { 
-            db
+              db
             , walk
             , eBus
             , readKey
@@ -17,6 +17,7 @@ function setData ( dependencies ) {
               { key, location } = readKey (k)
             , hasValidation = vFn instanceof Function
             , ID = `${store}/${key}`
+            , PID = `${store}/${location}`
             ;
         if ( !db[store]    )   db[store] = {}
         if ( hasValidation )   validationStore[ ID ] = vFn
@@ -28,7 +29,7 @@ function setData ( dependencies ) {
         
         const ttl = ttlRequest[ ID ];
         if ( ttl ) {  
-                    const timeoutID = timeouts[`${store}/${location}`];
+                    const timeoutID = timeouts[ PID ];
                     if ( timeoutID )   clearTimeout ( timeoutID )
                     timeouts[ ID ] = setTimeout ( () => delete db[store][location], ttl )
             }

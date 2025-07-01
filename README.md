@@ -8,7 +8,7 @@
 `Data-pool` is a data-layer for node apps and single page application (**SPA**). Data-pool will simplify data maintanance with:
 
 - Multiple data stores;
-- Stores withimmutable data;
+- Stores with immutable data;
 - Signal stores with computed properties and effects;
 - API based stores;
 - Caching data records from Api requests;
@@ -28,11 +28,6 @@ Once it has been installed, it can be used by writing this line of JavaScript:
 import dataPool from '@peter.naydenov/data-pool'
 ```
 
-or 
-
-```js
-const dataPool = require ( '@peter.naydenov/data-pool' );
-```
 
 
 ## How to use it
@@ -42,6 +37,8 @@ Create a `data-pool` instance:
 const pool = dataPool ();
 ```
 Now you are free to add and manipulate stores and data. For more details read the '**Methods**' section
+
+
 
 ## Methods
 

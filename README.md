@@ -73,10 +73,10 @@ Creates a new data record in data pool.
 pool.set ( [key, storeName], data )
 /**
  *  Arguments:
- *    - key: string or tuple(required). 
+ *    - key: string (required). 
  *             if it's a string -> data identifier
- *             if it's a tuple -> first element is the data identifier, 
- *                                second is the extension.
+ *             string can contain '/'. First element is the data identifier, 
+ *             second is the extension.
  *      Extension should be available because some Api calls can return different
  *      results and we want to keep instead of overwrite them. Example: "getProduct"
  *      method can return product specification but we have a lot of products. We want

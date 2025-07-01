@@ -313,7 +313,7 @@ it ( 'Update record on interval', done => {
 
 
 
-it ( 'Remove API', done => {
+it ( 'Remove API. Async API', done => {
     const pool = dataPool ();
     let counter = 0;
     const API = {
@@ -331,6 +331,25 @@ it ( 'Remove API', done => {
                     done ()
             } , 60 )
 }) // remove API
+
+
+
+it ( 'API with sync methods', done => {
+    const pool = dataPool ();
+    let counter = 0;
+    const API = {
+                    getCounter : () => counter++
+            };
+    pool.addApi ( { API })
+    pool.setUpdate ( [ 'getCounter', 'API' ], 10 )
+    setTimeout ( () => pool.removeApi ( 'API' ), 26 )  // Method removeApi should stop updates related to the API
+
+    pool.get ( [ 'getCounter', 'API'] )
+    setTimeout ( () => {
+                    expect ( counter ).to.be.equal ( 3 )
+                    done ()
+            } , 60 )
+}) // API with sync methods
 
 
 

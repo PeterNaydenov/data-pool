@@ -50,24 +50,24 @@ return function getData ( ks,  ...args ) {
                     if ( !existingStore )   db[store] = {}
                     if ( !cache ) {
                                 if ( apiDB[store] && apiDB[store][key] ) {   // When api method exists
-                                                apiDB[store][key](args)   // store -> api name, data -> api method, args -> method arguments
-                                                    .then ( r => {
-                                                                if ( withCache ) {
-                                                                        db[store][location] = r
-                                                                        if ( ttl ) {  
-                                                                                const timeoutID = timeouts[ PID ];
-                                                                                if ( timeoutID )   clearTimeout ( timeoutID ) 
-                                                                                timeouts[ PID ] =  setTimeout ( () => delete db[store][location], ttl )
-                                                                            }
-                                                                    }
-                                                                if ( interval ) {
-                                                                        const activeInterval = intervals [ PID ];
-                                                                        if ( activeInterval )   clearTimeout ( activeInterval )
-                                                                        intervals[ PID ] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
-                                                                    }
-                                                                eBus.emit ( store, location, undefined, walk({data:r}))
-                                                                task.done ( walk({data:r})  )
-                                                        })
+                                                Promise.resolve (apiDB[store][key](args))   // store -> api name, data -> api method, args -> method arguments
+                                                        .then ( r => {
+                                                                    if ( withCache ) {
+                                                                            db[store][location] = r
+                                                                            if ( ttl ) {  
+                                                                                    const timeoutID = timeouts[ PID ];
+                                                                                    if ( timeoutID )   clearTimeout ( timeoutID ) 
+                                                                                    timeouts[ PID ] =  setTimeout ( () => delete db[store][location], ttl )
+                                                                                }
+                                                                        }
+                                                                    if ( interval ) {
+                                                                            const activeInterval = intervals [ PID ];
+                                                                            if ( activeInterval )   clearTimeout ( activeInterval )
+                                                                            intervals[ PID ] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
+                                                                        }
+                                                                    eBus.emit ( store, location, undefined, walk({data:r}))
+                                                                    task.done ( walk({data:r})  )
+                                                            })
                                                 return task.promise
                                     }
                                 return  null 

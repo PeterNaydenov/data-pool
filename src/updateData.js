@@ -38,7 +38,7 @@ return function updateData ( [k, store], ...args) {
             }
 
         if ( apiDB[store] && apiDB[store][key] ) {   // When api method exists
-                                    apiDB[store][key](args)   // store -> api name, data -> api method, args -> method arguments
+                                Promise.resolve ( apiDB[store][key](args) )   // store -> api name, data -> api method, args -> method arguments
                                         .then ( r => {
                                                     db[store][location] = r
                                                     if ( ttl ) {  

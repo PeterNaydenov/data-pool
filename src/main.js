@@ -22,7 +22,6 @@ import signals       from '@peter.naydenov/signals'
 
 import readKey        from './readKey.js'
 import getData        from './getData.js'
-import getDataAsync   from './getDataAsync.js'
 import setData        from './setData.js'
 import setComputed    from './setComputed.js'
 import setEffect      from './setEffect.js'
@@ -103,7 +102,6 @@ const API = {   // Data-pool API
                                             })
                                 } // has func. 
             , get            : getData ( dependencies )
-            , getAsync       : getDataAsync ( dependencies )
             , set            : setData ( dependencies )
             , setComputed    : setComputed ( dependencies )
             , setEffect      : setEffect ( dependencies )
@@ -134,9 +132,12 @@ const API = {   // Data-pool API
                                     let ups = Object.assign ( {}, income, dependencies.apiDB );
                                     Object.keys(ups).forEach ( k => dependencies.apiDB[k] = ups[k]   )
                                 }
-            , removeApi    : ( name ) => {
-                                    delete dependencies.apiDB[name]
-                                    removeUpdates ( dependencies.updateRequest, dependencies.intervals, name )
+            , removeApi    : ( names ) => {
+                                    const list = names.split ( ',' ).map ( k => k.trim () );
+                                    list.forEach ( name => {
+                                                delete dependencies.apiDB[name]
+                                                removeUpdates ( dependencies.updateRequest, dependencies.intervals, name )
+                                        })
                                 }
             , setUpdate    :  setUpdate ( dependencies )
             , removeUpdate : ([ loc, store ]) => {

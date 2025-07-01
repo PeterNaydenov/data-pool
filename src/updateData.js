@@ -14,11 +14,12 @@ function updateData ( dependencies ) {
       , readKey
   } = dependencies;
 
-return function updateData ( store, k, ...args) {
+return function updateData ( [k, store], ...args) {
         const 
               { key, location } = readKey ( k )
             , task = askForPromise ()
             , ID = `${store}/${key}`
+            , PID = `${store}/${location}`
             , withCache = !noCacheRequest.has ( ID )
             , dummy = dummyRequest[ID]
             , interval = updateRequest[ID] || false
@@ -26,13 +27,13 @@ return function updateData ( store, k, ...args) {
             ;
 
         if ( interval ) {
-                    const activeInterval = intervals [`${store}/${location}`];
+                    const activeInterval = intervals [ PID ];
                     if ( activeInterval )   clearTimeout ( activeInterval )
-                    intervals[`${store}/${location}`] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
+                    intervals[ PID] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
             }
             
         if ( dummy ) {
-                    dummy ().then ( r =>  task.done ()   )
+                    dummy ().then ( () =>  task.done ()   )
                     return task.promise
             }
 
@@ -41,9 +42,9 @@ return function updateData ( store, k, ...args) {
                                         .then ( r => {
                                                     db[store][location] = r
                                                     if ( ttl ) {  
-                                                            const timeoutID = timeouts[`${store}/${location}`];
+                                                            const timeoutID = timeouts[ PID ];
                                                             if ( timeoutID )   clearTimeout ( timeoutID ) 
-                                                            timeouts[`${store}/${location}`] =  setTimeout ( () => delete db[store][location], ttl )
+                                                            timeouts[ PID ] =  setTimeout ( () => delete db[store][location], ttl )
                                                         }
                                                     
                                                     eBus.emit ( store, location, undefined, walk({data:r}))

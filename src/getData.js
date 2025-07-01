@@ -21,12 +21,14 @@ function getData ( dependencies ) {
 return function getData ( ks,  ...args ) {    
     // ks could be [keyList, store]
     // or [ [keyList, store], [keyList, store], [ key, store]... ]
+    
     const list = setupListOfRequestedParams ( ks )
     let result = list.map ( ([k, store]) => {
                 const 
                           { key, location } = readKey ( k )
                         , task = askForPromise ()
                         , ID = `${store}/${key}`
+                        , PID = `${store}/${location}`
                         , withCache = !noCacheRequest.has ( ID )
                         , dummy = dummyRequest[ID]
                         , interval = updateRequest[ID] || false
@@ -40,7 +42,7 @@ return function getData ( ks,  ...args ) {
                         , cache =  false
                         ;
                         
-                    if ( existingStore && withCache )   cache = db[store].hasOwnProperty(location) ? true : false
+                    if ( existingStore && withCache )   cache = db[store].hasOwnProperty ( location )
 
                     if ( dummy instanceof Function )  return dummy ()
                     else if ( dummy )                 return dummy
@@ -53,15 +55,15 @@ return function getData ( ks,  ...args ) {
                                                                 if ( withCache ) {
                                                                         db[store][location] = r
                                                                         if ( ttl ) {  
-                                                                                const timeoutID = timeouts[`${store}/${location}`];
+                                                                                const timeoutID = timeouts[ PID ];
                                                                                 if ( timeoutID )   clearTimeout ( timeoutID ) 
-                                                                                timeouts[`${store}/${location}`] =  setTimeout ( () => delete db[store][location], ttl )
+                                                                                timeouts[ PID ] =  setTimeout ( () => delete db[store][location], ttl )
                                                                             }
                                                                     }
                                                                 if ( interval ) {
-                                                                        const activeInterval = intervals [`${store}/${location}`];
+                                                                        const activeInterval = intervals [ PID ];
                                                                         if ( activeInterval )   clearTimeout ( activeInterval )
-                                                                        intervals[`${store}/${location}`] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
+                                                                        intervals[ PID ] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
                                                                     }
                                                                 eBus.emit ( store, location, undefined, walk({data:r}))
                                                                 task.done ( walk({data:r})  )

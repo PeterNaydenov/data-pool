@@ -92,11 +92,13 @@ function dataPool () {
 const API = {   // Data-pool API
               list         : listStores ( dependencies.db ) // list Stores
             , has          : ( ks ) => {   // Checks if store or store-key exist 
+                                    if ( typeof ks === 'string' ) {
+                                                return dependencies.db[ks] ? true : false
+                                        }
                                     const list = setupListOfRequestedParams ( ks )
                                     return list.every ( ([k, store]) => {
                                                 const { location } = readKey ( k )
-                                                if ( !dependencies.db[store]           )   return false
-                                                if ( !dependencies.db[store][location] )   return false
+                                                if ( !dependencies.db[store]?.hasOwnProperty[location] )   return false
                                                 return true
                                             })
                                 } // has func. 
@@ -128,7 +130,7 @@ const API = {   // Data-pool API
                            }                        
                 } // exportStore func.
             , on           : dependencies.eBus.on
-            , addApi       : (income) => {
+            , addApi       : ( income ) => {
                                     let ups = Object.assign ( {}, income, dependencies.apiDB );
                                     Object.keys(ups).forEach ( k => dependencies.apiDB[k] = ups[k]   )
                                 }
@@ -137,30 +139,44 @@ const API = {   // Data-pool API
                                     removeUpdates ( dependencies.updateRequest, dependencies.intervals, name )
                                 }
             , setUpdate    :  setUpdate ( dependencies )
-            , removeUpdate : (store,loc ) => {
+            , removeUpdate : ([ loc, store ]) => {
                                     const 
-                                          { key,location } = readKey ( loc )
+                                          { key, location } = readKey ( loc )
                                         , activeUpdate = dependencies.intervals[`${store}/${location}`]
                                         ;
                                     if ( activeUpdate )   clearTimeout ( activeUpdate )
                                     delete dependencies.updateRequest[`${store}/${key}`]
                                 }
             , update       : updateData ( dependencies )
-            , setTTL       : ( store, key, ttl ) =>   dependencies.ttlRequest[`${store}/${key}`] = ttl
-            , removeTTL    : ( store, key ) => delete dependencies.ttlRequest[`${store}/${key}`]
+            , setTTL       : ( [key, store], ttl ) =>        dependencies.ttlRequest[`${store}/${key}`] = ttl
+            , removeTTL    : ( [key, store] )      => delete dependencies.ttlRequest[`${store}/${key}`]
             , setDummy     : setDummy ( dependencies.dummyRequest )
-            , removeDummy  : (store, key ) => {
+            , removeDummy  : ([key,store='default'] ) => {
                                     delete dependencies.dummyRequest[`${store}/${key}`]
                                 }
-            , setNoCache    : ( store, key ) => dependencies.noCacheRequest.add ( `${store}/${key}` )
-            , removeNoCache : ( store, key ) => dependencies.noCacheRequest.delete ( `${store}/${key}` )
-            , flush          : ( store='*', k='' ) => {
-                                        const { key,location } = readKey ( k )
+            , setNoCache    : ( [key, store='default'] ) => dependencies.noCacheRequest.add ( `${store}/${key}` )
+            , removeNoCache : ( [key, store='default'] ) => dependencies.noCacheRequest.delete ( `${store}/${key}` )
+            , flush          : function flush () {
+                                        if ( arguments.length === 0 ) {
+                                                    Object.keys ( dependencies.db ).forEach ( k => dependencies.db[k] = {} )
+                                                    return
+                                            }
+                                        if ( typeof arguments[0] === 'string' ) {
+                                                    const storeList = arguments[0].split ( ',').map ( s => s.trim () );
+                                                    storeList.forEach ( s => {
+                                                                if ( dependencies.db[s] )   dependencies.db[s] = {}
+                                                        })
+                                                    return
+                                            }
+                                        const [ k=null, store='*' ] = arguments[0];
+                                        const { key,location } = (k!=null) ? readKey ( k ) : { key: k, location: k }
                                         if ( store === '*' ) {
                                                     Object.keys ( dependencies.db ).forEach ( k => dependencies.db[k] = {} )
                                                     return
                                             }
+                                            
                                         if ( !key ) {
+                                                    
                                                     if ( dependencies.db[store] )   dependencies.db[store] = {}
                                                     return
                                             }

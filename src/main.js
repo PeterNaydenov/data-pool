@@ -110,7 +110,8 @@ const API = {   // Data-pool API
             , importStore  : (store,data) => {  // Add data as a store
                             if ( !dependencies.db[store] )   dependencies.db[store] = {}
                             if ( dependencies.signalStores.includes ( store ) ) {
-                                        Object.entries ( data ).forEach ( ([k,v]) => dependencies.db[store][k] = dependencies.signalNest.state ( v ) )
+                                        if ( !dependencies.db[store] )   dependencies.db[store] = {}
+                                        Object.entries ( data ).forEach ( ([k,v]) =>  dependencies.db[store][k] = dependencies.signalNest.state ( v )   )
                                 }
                             else {
                                         dependencies.db[store] = walk({data})   

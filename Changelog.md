@@ -1,18 +1,18 @@
 # Release History
 
 
-### 2.0.0 ( xxxx-xx-xx )
-Version 2 is coming to make library more developer friendly. 
-- Method 'get' will return synchroneous results. Async requests will return a promise;
-- Method 'getAsync' will return a promise as method 'get' did in version 1;
-- Single request for multiple properties from a store;
+### 2.0.0 ( 2025-07-02 )
+Version 2 is coming to make library more developer friendly.
+- Method 'get' will return synchroneous results;
+- Single request for multiple properties from the same store;
 - Single request for multiple props from different stores;
 - Change in function arguments related to store/property handling;
-- Define a store as a signal store;
-- Computed properties in signal store;
-- Store effects for signal store;
-- Set a store-key will return a boolean;
-- Set a store-key will receive an argument - validation function;
+- Define a store as a "signal" store;
+- Computed properties in "signal" store;
+- All Signal stores are available to the computed function as an argument;
+- Signal effects based on "signal" stores;
+- Method `set` has optional argument - a validation function;
+- Methodd `set` returns a boolean as a result of validation;
 
 
 

@@ -288,6 +288,10 @@ it ( 'Check with "has"', () => {
     expect ( pool.has ( ['k', 'test'])).to.be.equal ( false )
     pool.set (['k', 'test'], 'Peter' )
     // expect ( pool.has (['k', 'test'])).to.be.true
+
+    pool.importStore ( 'test2', {} )
+    // Check for list of stores
+    expect ( pool.has ( 'test, test2' )).to.be.equal ( true )
 }) // it check with "has"
 
 

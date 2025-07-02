@@ -70,7 +70,7 @@ Now you are free to add and manipulate stores and data. For more details read th
 ### pool.set
 Creates a new data record in data pool.
 ```js
-pool.set ( [key, storeName], data )
+pool.set ( [key, storeName], data, validationFn )
 /**
  *  Arguments:
  *    - key: string (required). 
@@ -83,6 +83,8 @@ pool.set ( [key, storeName], data )
  *      to keep them in data-pool as a separate objects.
  *    - storeName: string(optional). Name of the store. Default value is 'default';
  *    - data: Any(required). Provide any data that should be saved;
+ *    - validationFn: function(optional). Function will be executed always when we have 
+ *      specified storeName/key. Function should returns a boolean(true/false).
  * 
  *   Returns: Boolean
  * /
@@ -93,7 +95,7 @@ Example:
 
 ```js
  // Validation function.
- let checkName = (data) => {
+ let checkName = ( data ) => {
                        // Let's pretend that the right value could be only 'John', 'Peter' or 'Mark'
                        const list = [ 'John', 'Peter', 'Mark' ]
                        if ( list.includes ( data ) ) return true
@@ -110,12 +112,13 @@ Example:
   * 3: There is store 'demo' with a property 'name'
   * Will overwrite the property 'name' with 'Peter'
   * Validation function is optional. Will not work during initialization. Once is set up, it will be called.
+  * Trying to provide a new validation function will be ignored.
   */
   
  // Validation is already setted for ['name', 'demo'] and will be used on every change request
  let second = pool.set ( ['name', 'demo'], 'Ivan' )
  // second => false
- // Name 'Ivan' will not pass the validation function and will return false. No changes will be made in the store.
+ // Name 'Ivan' will not pass the validation and will return false. No changes will be made in the store.
  
  
 
@@ -192,11 +195,8 @@ pool.addApi ({
         })
 
 // userApi has method 'getDetails'. Here is an example how we can call that method
-pool.get ( 'user', 'getDetails' )
-    .then ( r => {
-                // r will contain result of userAPI.getDetails()
-        })
-
+let r = pool.get ( [ 'getDetails', 'user'] )
+// r will contain result of userAPI.getDetails()
 ```
 
 
@@ -211,22 +211,25 @@ pool.removeApi ( apiName )
  *  - apiName - string(required). Api name that should be removed;
  *  Returns: void
  *
- * /
+ */
 
-````
+// Remove multiple apis - single string of api names separated by comma.
+pool.removeApi ( 'apiName1, apiName2' )
+```
+
+
 
 Example:
 
 ```js
   pool.removeApi ( 'user' )
  // Will remove association with userAPI from prev. example
- pool.getAsync ([ 'getDetails', 'user'] )
-     .then ( r => {
-                    // Relation to the api is removed but store still exists!
-                    // 1. If store 'user' has record for 'getDetails' -> will return the result
-                    // 2. If there is no record -> will return null. 
-                })
+ let r = pool.getAsync ([ 'getDetails', 'user'] )
+  // Relation to the api is removed but store still exists!
+  // 1. If store 'user' has record for 'getDetails' -> will return the result
+  // 2. If there is no record -> will return null.    
 ```
+
 
 
 ### pool.list
@@ -251,12 +254,12 @@ Accociation of the productAPI with data-pool will not create the store automatic
 Check if store or store/key exists.
 
 ```js
-  pool.has ( [ keyList, storeName ])
+  pool.has ( [ keyList, storeName ] )
   /**
    *  Arguments
    *  - storeName - string(required). Name of the store.
    *  - keyList: coma separated strings(requested properties) or just a string(single requested property). 
-   *             if string has '/', first element is the data identifier, other elements are *             extensions.
+   *             if string has '/', first element is the data identifier, other elements are extensions.
    *  Returns: boolean.
    * /
 ```
@@ -266,6 +269,14 @@ Example:
 ```js
   const hasStore = pool.has ( 'user' )
   // hasStore => true
+
+  // check for multiple stores (comma separated values)
+  const hasStores = pool.has ( 'user, product' )
+  // hasStores => false (if product or user store does not exist)
+
+  // check for single property
+  const hasProperty = pool.has ( ['name', 'user'] )
+  // hasProperty => true ( check if store 'user' has property 'name'. If has, will return true)
 ```
 
 
@@ -339,7 +350,7 @@ function callback ( key, oldData, newData ) {
 Set a dummy source of information for specific store/key. Used for testing and development purposes. If Api is not ready we can provide expected data as using a dummy function. To get back to real api call remove the dummy. Dummy will always overwrite default source of information.
 
 ```js
-pool.setDummy ( storeName, key, dummyFn )
+pool.setDummy ( [ key, storeName], dummyFn )
 /**
  *  Arguments:
  *     - storeName: string(required). Name of the store;
@@ -359,14 +370,12 @@ pool.setDummy ( storeName, key, dummyFn )
 Cancel dummy source of information.
 
 ```js
-pool.removeDummy ( storeName, key )
+pool.removeDummy ( [ key, storeName] )
 /**
  *  Arguments:
  *     - storeName: string(required). Name of the store;
  *     - key: string or tuple(required). 
  *             if it's a string -> data identifier
- *             if it's a tuple -> first element is the data identifier, 
- *                                second is the extension. 
  */
 ```
 
@@ -374,7 +383,7 @@ pool.removeDummy ( storeName, key )
 Set a 'time to live'(TTL) to specific store/key.
 
 ```js
- pool.setTTL ( storeName, key, ttl )
+ pool.setTTL ( [ key, storeName], ttl )
  /**
   *  Arguments: 
   *  - storeName : string(required). Name of the store;
@@ -401,7 +410,7 @@ pool.removeTTL ( storeName, key )
 Set interval to update record for api related stores.
 
 ```js
-pool.setUpdate ( storeName, key, interval )
+pool.setUpdate ( [ key, storeName], interval )
 /**
  *  Arguments:
  *  - storeName: string(required). Name of the store;
@@ -415,7 +424,7 @@ pool.setUpdate ( storeName, key, interval )
 Cancel automatic update for api related stores.
 
 ```js
-pool.removeUpdate ( storeName, key )
+pool.removeUpdate ( [key, storeName] )
 /**
  *  Arguments:
  *  - storeName: string(required). Name of the store;
@@ -430,7 +439,7 @@ pool.removeUpdate ( storeName, key )
 Use '*setNoCache*' method with api related stores. Set `store-key` as no-cache and every data request will hit the api.
 
 ```js
- pool.setNoCache ( storeName, key )
+ pool.setNoCache ([ key, storeName ])
  /**
   *  Arguments:
   *  - storeName : string(required). Name of the store;
@@ -443,11 +452,11 @@ Use '*setNoCache*' method with api related stores. Set `store-key` as no-cache a
 Cancel no-cache request.
 
 ```js
-pool.removeNoCache ( storeName, key )
+pool.removeNoCache ([ key, storeName ])
 /**
  * Arguments:
- *  - storeName: string(required). Name of the store;
  *  - key: string(required). Data identifier;
+ *  - storeName: string(required). Name of the store;
  *  Returns : void
  */
 ```

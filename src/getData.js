@@ -50,7 +50,7 @@ return function getData ( ks,  ...args ) {
                     if ( !existingStore )   db[store] = {}
                     if ( !cache ) {
                                 if ( apiDB[store] && apiDB[store][key] ) {   // When api method exists
-                                                Promise.resolve (apiDB[store][key](args))   // store -> api name, data -> api method, args -> method arguments
+                                                Promise.resolve (apiDB[store][key](...args))   // store -> api name, data -> api method, args -> method arguments
                                                         .then ( r => {
                                                                     if ( withCache ) {
                                                                             db[store][location] = r
@@ -73,7 +73,7 @@ return function getData ( ks,  ...args ) {
                                 return  null 
                         }
                     else {
-                                if ( isSignalValue )   return walk({data:db[store][location].get()})
+                                if ( isSignalValue )   return walk({data:db[store][location].get(...args)})
                                 else                   return walk ({ data : db[store][location] }) 
                         }
         }) // list.forEach

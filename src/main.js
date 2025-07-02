@@ -92,7 +92,8 @@ const API = {   // Data-pool API
               list         : listStores ( dependencies.db ) // list Stores
             , has          : ( ks ) => {   // Checks if store or store-key exist 
                                     if ( typeof ks === 'string' ) {
-                                                return dependencies.db[ks] ? true : false
+                                                let list = ks.split(',').map ( k => k.trim () );
+                                                return list.every ( k => dependencies.db[k] ? true : false )
                                         }
                                     const list = setupListOfRequestedParams ( ks )
                                     return list.every ( ([k, store]) => {

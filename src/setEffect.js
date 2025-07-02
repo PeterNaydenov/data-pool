@@ -1,6 +1,6 @@
 function setEffect ( dependencies ) {
         const { signalNest, signalStores, db } = dependencies;
-        return ( ks, fn ) => {
+        return ( ks, fn, ...args ) => {
                     if ( typeof ks[0] === 'string' )   ks = [ ks ]   // Unify the input data structure 
                     // list contains signals that will trigger function on change
                     const list = ks.reduce ( ( res, item ) => {
@@ -14,7 +14,7 @@ function setEffect ( dependencies ) {
                                                         }
                                                     return res
                                         }, [] )
-                    signalNest.effect ( list, fn )
+                    signalNest.effect ( list, fn, ...args )
 }} // setEffect func.
 
 

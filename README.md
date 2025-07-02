@@ -92,7 +92,16 @@ pool.set ( [key, storeName], data )
 Example:
 
 ```js
- pool.set ( ['name', 'demo'], 'Peter' )
+ // Validation function.
+ let checkName = (data) => {
+                       // Let's pretend that the right value could be only 'John', 'Peter' or 'Mark'
+                       const list = [ 'John', 'Peter', 'Mark' ]
+                       if ( list.includes ( data ) ) return true
+                       else return false
+                   }
+
+ let first = pool.set ( ['name', 'demo'], 'Peter', checkName )
+ // first => true
  /**
   * 1: No store 'demo': 
   *  Will create store 'demo' and will set property 'name' to 'Peter'
@@ -100,10 +109,25 @@ Example:
   * Will create a property 'name' for store 'demo'
   * 3: There is store 'demo' with a property 'name'
   * Will overwrite the property 'name' with 'Peter'
-  * /
- // 
-    
+  * Validation function is optional. Will not work during initialization. Once is set up, it will be called.
+  */
+  
+ // Validation is already setted for ['name', 'demo'] and will be used on every change request
+ let second = pool.set ( ['name', 'demo'], 'Ivan' )
+ // second => false
+ // Name 'Ivan' will not pass the validation function and will return false. No changes will be made in the store.
+ 
+ 
+
+ // When 'set' method returns boolean you can use it as a condition
+ if ( pool.set( ['name', 'demo'], 'John' ) ) {
+        // Do something if success
+    }
+ else {
+        // Do something if fail
+    }
 ```
+
 
 
 ### pool.get

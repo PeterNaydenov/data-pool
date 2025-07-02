@@ -142,13 +142,28 @@ it ( 'Set and execute a effect', () => {
         pool.setSignalStore ( 'signal' )
         pool.importStore ( 'signal', data )
         // Execute the effect on changes in 'name' and 'family' props of the 'signal' store
-        pool.setEffect ([ 'name,family', 'signal'], () =>  counter++ )
-        pool.set ([ 'name', 'signal'], 'Changed' )
+        pool.setEffect ([ 'name,family', 'signal'], ( x ) => { 
+                                // 'x' is the extra argument of setEffect and comes as
+                                // argument in every call of the effect
+                                // Create a dependency injection by providing object 
+                                // that should be controlled by the effect
+                                expect ( x ).to.be.equal ( 'extra' )
+                                counter++ 
+                        }, 'extra' )
+
+        pool.set ([ 'name', 'signal'], 'Someone' )
         expect ( counter ).to.be.equal ( 1 )
+
         pool.set ([ 'family', 'signal'], 'Changed' )
         expect ( counter ).to.be.equal ( 2 )
 
-        pool.set ([ 'personal', 'signal'], { age: 23, height: 180, weight: 80, gender: 'male', address: { city: 'Sofia', country: 'Bulgaria' } } )
+        pool.set ([ 'personal', 'signal'], { 
+                          age: 51
+                        , height: 175
+                        , weight: 67
+                        , gender: 'male'
+                        , address: { city: 'Sofia', country: 'Bulgaria' } 
+                })
         // 'personal' changes will not trigger the effect
         expect ( counter ).to.be.equal ( 2 )
 }) // it set and execute a effect

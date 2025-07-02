@@ -1,15 +1,15 @@
 
 function readKey ( k ) {
-        let key,ext, location;
-        if ( typeof k !== 'string' ) {
+        let key, ext, location;   // key parameters
+        let kList = k.split ( '/' );
+        location = k
+        if ( kList.length > 1 ) {
                     key = k[0]
-                    ext = k[1]
-                    location = `${key}/${ext}`
+                    ext = kList.slice ( 1 ).join ( '/' )
             }
         else {
                     key = k
                     ext = false
-                    location = key
             }
         return { key, ext, location }
 } // readKey func.

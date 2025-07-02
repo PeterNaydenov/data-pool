@@ -1,6 +1,22 @@
 # Release History
 
 
+### 2.0.0 ( 2025-07-02 )
+Version 2 is coming to make library more developer friendly.
+- Method 'get' will return synchroneous results;
+- Single request for multiple properties from the same store;
+- Single request for multiple props from different stores;
+- Change in function arguments related to store/property handling;
+- Define a store as a "signal" store;
+- Computed properties in "signal" store;
+- All Signal stores are available to the computed function as an argument;
+- Signal effects based on "signal" stores;
+- Method `set` has optional argument - a validation function;
+- Methodd `set` returns a boolean as a result of validation;
+
+
+
+
 
 ### 1.0.12 ( 2025-05-10)
 - [x] Dependency update. @peter.naydenov/notice@2.4.1;

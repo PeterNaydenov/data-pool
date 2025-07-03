@@ -1,5 +1,8 @@
 # Release History
 
+### 2.0.1 ( 2025-07-03 )
+- [x] Fix: Method 'has' breaks on some cases;
+
 
 ### 2.0.0 ( 2025-07-02 )
 Version 2 is coming to make library more developer friendly.
@@ -13,6 +16,7 @@ Version 2 is coming to make library more developer friendly.
 - Signal effects based on "signal" stores;
 - Method `set` has optional argument - a validation function;
 - Methodd `set` returns a boolean as a result of validation;
+- [ ] Bug: Method 'has' breaks on some cases;
 
 
 

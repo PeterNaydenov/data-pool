@@ -145,7 +145,7 @@ pool.get ( [ key, storeName], ...other )
  *             if it's a string -> data identifier
  *             key can contains the symbol '/' that will separate key from extensions
  *   Returns: Any. The data
- * /
+ */
 ```
 With `pool.get` is possible to get multiple properties of different stores and receive the result as an array.
 

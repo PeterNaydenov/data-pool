@@ -277,6 +277,7 @@ it ( 'Use API with ttl', done => {
 
 it ( 'Check with "has"', () => {
     const pool = dataPool ();
+    pool.set ( ['greeting', 'special'], ['Hello', 'hi', 'Hey'] )
     // Test for store with name 'test'. No properties defined
     expect ( pool.has ( 'test' )).to.be.equal ( false )
     // Test for property 'k' in store 'test'.
@@ -292,6 +293,9 @@ it ( 'Check with "has"', () => {
     pool.importStore ( 'test2', {} )
     // Check for list of stores
     expect ( pool.has ( 'test, test2' )).to.be.equal ( true )
+
+    expect ( pool.has ( ['greeting', 'special'] ) ).to.be.equal ( true )
+
 }) // it check with "has"
 
 

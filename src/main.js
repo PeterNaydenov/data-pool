@@ -96,9 +96,10 @@ const API = {   // Data-pool API
                                                 return list.every ( k => dependencies.db[k] ? true : false )
                                         }
                                     const list = setupListOfRequestedParams ( ks )
+                                    
                                     return list.every ( ([k, store]) => {
                                                 const { location } = readKey ( k )
-                                                if ( !dependencies.db[store]?.hasOwnProperty[location] )   return false
+                                                if ( !dependencies.db[store]?.hasOwnProperty(location) )   return false
                                                 return true
                                             })
                                 } // has func. 

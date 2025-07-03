@@ -87,7 +87,7 @@ pool.set ( [key, storeName], data, validationFn )
  *      specified storeName/key. Function should returns a boolean(true/false).
  * 
  *   Returns: Boolean
- * /
+ */
 
 ```
 

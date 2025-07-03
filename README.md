@@ -181,7 +181,7 @@ For example - key:[ getProduct, 2443 ]. getProduct can return all items in the s
   *  Arguments:
   *  - apiList: object(required). List of Api that should work into data-pool
   *  Returns: void
-  * /
+  */
  
 ```
 
@@ -239,7 +239,7 @@ pool.list ()
 /**
  *  no arguments
  *  Returns: string[]. 
- * /
+ */
 ```
 Example:
 ```js
@@ -261,7 +261,7 @@ Check if store or store/key exists.
    *  - keyList: coma separated strings(requested properties) or just a string(single requested property). 
    *             if string has '/', first element is the data identifier, other elements are extensions.
    *  Returns: boolean.
-   * /
+   */
 ```
 
 Example:
@@ -291,7 +291,7 @@ Converts a javascript object to data-pool store.
   *     - data - object(required). Any data 
   * 
   *   Returns : void
-  * /
+  */
 ```
 
 Example:
@@ -317,7 +317,7 @@ pool.exportStore ( storeName )
  *  Arguments:
  *  - storeName - string(required). Name of the store for export
  *  Returns : object
- * /
+ */
 ```
 
 
@@ -341,7 +341,7 @@ function callback ( key, oldData, newData ) {
  *   - oldData - field value at until now
  *   - newData - field upcoming value
  *  Returns : void
- * /
+ */
 ```
 
 
@@ -362,7 +362,7 @@ pool.setDummy ( [ key, storeName], dummyFn )
  *                specified storeName/key. Function should return a promise.
  * 
  *  Returns: void
- * /
+ */
 ```
 
 

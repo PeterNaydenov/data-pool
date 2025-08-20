@@ -64,6 +64,7 @@ Now you are free to add and manipulate stores and data. For more details read th
 , removeUpdate   : 'Remove recurring updates requests'
 , setNoCache     : 'Specify store-key records that should not have cache'
 , removeNoCache  : 'Remove no cache setting per store-key'
+, flush          : 'Flush data from data-pool'
 ```
 
 
@@ -458,6 +459,32 @@ pool.removeNoCache ([ key, storeName ])
  *  - key: string(required). Data identifier;
  *  - storeName: string(required). Name of the store;
  *  Returns : void
+ */
+```
+
+### pool.flush 
+Flush data from data pool.
+
+```js
+pool.flush ()
+/**
+ *  no arguments
+ *  Will remove the content from all available storages;
+ *  Returns: void
+ */
+
+pool.flush ( 'storeName, storeName2' )
+/**
+ *  Arguments:
+ *  - string. List of stores that should be flushed separated by comma.
+ * 
+ *  Will remove the content of counted stores.
+ *  Returns: void
+ */
+pool.flush ( [ 'key', 'storeName' ])
+/**
+ *  Arguments:
+ * - array [ key, storeName]. Will remove the specific data from specific store.
  */
 ```
 

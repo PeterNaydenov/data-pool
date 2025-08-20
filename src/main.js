@@ -27,7 +27,7 @@ import setComputed    from './setComputed.js'
 import setEffect      from './setEffect.js'
 import setSignalStore from './setSignalStore.js'
 import setDummy       from './setDummy.js'
-import listStores     from './listStores.js'
+import listStoreNames from './listStoreNames.js'
 import setUpdate      from "./setUpdate.js"
 import removeUpdates  from "./removeUpdates.js"
 import updateData     from "./updateData.js"
@@ -89,7 +89,7 @@ function dataPool () {
     
 
 const API = {   // Data-pool API
-              list         : listStores ( dependencies.db ) // list Stores
+              list         : listStoreNames ( dependencies.db ) // list Stores
             , has          : ( ks ) => {   // Checks if store or store-key exist 
                                     if ( typeof ks === 'string' ) {
                                                 let list = ks.split(',').map ( k => k.trim () );
@@ -175,20 +175,25 @@ const API = {   // Data-pool API
                                         const [ k=null, store='*' ] = arguments[0];
                                         const { key,location } = (k!=null) ? readKey ( k ) : { key: k, location: k }
                                         if ( store === '*' ) {
-                                                    Object.keys ( dependencies.db ).forEach ( k => dependencies.db[k] = {} )
+                                                    Object.keys ( dependencies.db ).forEach ( k => {
+                                                                dependencies.db[k] = {}
+                                                                // TODO: eBus event? 
+                                                        })
                                                     return
                                             }
                                             
                                         if ( !key ) {
-                                                    
                                                     if ( dependencies.db[store] )   dependencies.db[store] = {}
                                                     return
                                             }
+
                                         if ( dependencies.db[store] && dependencies.db[store][location]) {
                                                     delete dependencies.db[store][location]
                                             }
                                     } // flush func.
-            // write   // TODO: Define method for store persistence
+            // TODO: persist storage - add new value without deleting the old ones.
+            //  values are arrays ... last value is the actual value.
+            // write   // TODO: Define method for store persistence 
             // read    // TODO: Define method for loading store from disk, db or else...
         }
   dependencies.eBus.on ( 'update', arg => API.update ( ...arg )   )

@@ -29,7 +29,7 @@ return function updateData ( [k, store], ...args) {
         if ( interval ) {
                     const activeInterval = intervals [ PID ];
                     if ( activeInterval )   clearTimeout ( activeInterval )
-                    intervals[ PID] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
+                    intervals[ PID ] = setTimeout ( () => eBus.emit ( 'update', arguments ) , interval )  
             }
             
         if ( dummy ) {

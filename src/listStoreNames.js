@@ -1,10 +1,10 @@
-function listStores ( db ) {
+function listStoreNames ( db ) {
 return function listStores () {
         return Object.keys ( db )
 }}
 
 
 
-export default listStores
+export default listStoreNames
 
 

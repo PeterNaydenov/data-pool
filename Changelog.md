@@ -1,7 +1,15 @@
 # Release History
 
+
+
+### 2.0.2 ( 2025-10-08 )
+- [x] Dependency update. ask-for-promises@3.0.2;
+
+
+
 ### 2.0.1 ( 2025-07-03 )
 - [x] Fix: Method 'has' breaks on some cases;
+
 
 
 ### 2.0.0 ( 2025-07-02 )

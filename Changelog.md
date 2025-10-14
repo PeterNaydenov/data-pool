@@ -1,6 +1,10 @@
 # Release History
 
 
+### 2.0.3 ( 2025-10-14 )
+- [x] Dependency update. @peter.naydenov/walk@5.0.2;
+
+
 
 ### 2.0.2 ( 2025-10-08 )
 - [x] Dependency update. ask-for-promises@3.0.2;

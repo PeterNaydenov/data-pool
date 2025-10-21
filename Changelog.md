@@ -1,6 +1,14 @@
 # Release History
 
 
+### 2.1.0 ( 2025-10-21 )
+- [x] Added JSDoc documentation to the library source code;
+- [x] Implemented TypeScript declaration file generation from JSDoc comments using TypeScript compiler;
+- [x] Set up build process with Rollup for multiple module formats: CommonJS (data-pool.cjs), ESM (data-pool.esm.mjs), and UMD (data-pool.umd.js);
+- [x] Added conditional exports in package.json for environment-specific module loading;
+
+
+
 ### 2.0.3 ( 2025-10-14 )
 - [x] Dependency update. @peter.naydenov/walk@5.0.2;
 

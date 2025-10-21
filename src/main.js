@@ -1,24 +1,57 @@
 /**
- *   Data Pool
- *   
- *    Data layer for node apps and single page application ( SPA ). Data-pool will simplify
- *    data maintanance with :
- *      - Immutable data stores;
- *      - Caching for data requests;
- *      - Optional TTL for each cached data;
- *      - Optional update schedule for each cached data;
- *      - A mechanism to easily change the source of information (mock);
- * 
- *    History notes: 
- *     - Development was started on October 27th, 2022;
- *     - Published on GitHub for first time: November 7th, 2022;
- * 
+ * Data Pool
+ *
+ * Data layer for node apps and single page application (SPA). Data-pool simplifies
+ * data maintenance with:
+ * - Multiple data stores
+ * - Stores with immutable data
+ * - Signal stores with computed properties and effects
+ * - API based stores
+ * - Caching data records from API requests
+ * - Optional TTL for each data record
+ * - Optional update schedule for each data record
+ * - Mechanism to fake API request responses
+ *
+ * History notes:
+ * - Development started on October 27th, 2022
+ * - Published on GitHub for first time: November 7th, 2022
+ *
+ * @returns {DataPoolAPI} The data-pool API object with methods for data management.
  */
 
-import askForPromise from 'ask-for-promise'
-import walk          from '@peter.naydenov/walk'
-import notice        from '@peter.naydenov/notice'
-import signals       from '@peter.naydenov/signals'
+
+
+/**
+ * @typedef {Object} DataPoolAPI
+ * @property {function(): string[]} list - Returns list of all existing stores.
+ * @property {function(string|Array): boolean} has - Checks if store or store-key exists.
+ * @property {function(Array): any} get - Returns requested data or fetches from API.
+ * @property {function(Array, any, function?): boolean} set - Creates or updates a data record.
+ * @property {function(Array, function): void} setComputed - Creates a computed property in signal stores.
+ * @property {function(function): void} setEffect - Creates a signal effect.
+ * @property {function(string|string[]): void} setSignalStore - Defines stores as signal stores.
+ * @property {function(string, Object): void} importStore - Adds data as a store.
+ * @property {function(string): Object|null} exportStore - Exports store as an object.
+ * @property {function(string, function): void} on - Listens for store changes.
+ * @property {function(Object): void} addApi - Associates APIs with data-pool.
+ * @property {function(string): void} removeApi - Removes API associations.
+ * @property {function(Array, number): void} setUpdate - Sets recurring updates for API records.
+ * @property {function(Array): void} removeUpdate - Removes recurring updates.
+ * @property {function(Array, number): void} setTTL - Sets TTL for a record.
+ * @property {function(Array): void} removeTTL - Removes TTL.
+ * @property {function(Array, function): void} setDummy - Sets dummy data source.
+ * @property {function(Array): void} removeDummy - Removes dummy data source.
+ * @property {function(Array): void} setNoCache - Sets no-cache for a record.
+ * @property {function(Array): void} removeNoCache - Removes no-cache setting.
+ * @property {function(string?|Array?): void} flush - Flushes data from stores.
+ */
+
+
+
+import askForPromise from 'ask-for-promise'         // Promise utility. Docs: https://github.com/PeterNaydenov/ask-for-promise
+import walk          from '@peter.naydenov/walk'    // Walk utility. Docs: https://github.com/PeterNaydenov/walk
+import notice        from '@peter.naydenov/notice'  // Event emitter. Docs: https://github.com/PeterNaydenov/notice
+import signals       from '@peter.naydenov/signals' // Signals. Docs: https://github.com/PeterNaydenov/signals
 
 import readKey        from './readKey.js'
 import getData        from './getData.js'
@@ -31,6 +64,7 @@ import listStoreNames from './listStoreNames.js'
 import setUpdate      from "./setUpdate.js"
 import removeUpdates  from "./removeUpdates.js"
 import updateData     from "./updateData.js"
+
 
 
 function setupListOfRequestedParams ( ks) {
@@ -74,6 +108,10 @@ function createDataStore () {
 
 
 
+/**
+ * Creates a new data-pool instance.
+ * @returns {DataPoolAPI} The data-pool API object.
+ */
 function dataPool () {
     const dependencies = createDataStore ();
 

@@ -45,7 +45,7 @@
     "@peter.naydenov/notice": "^2.4.1",
     "@peter.naydenov/signals": "^1.2.1",
     "@peter.naydenov/walk": "^5.0.2",
-    "ask-for-promise": "^3.0.2"
+    "ask-for-promise": "^3.1.0"
   },
   "c8": {
     "include": [

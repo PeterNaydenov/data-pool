@@ -1,6 +1,12 @@
 # Release History
 
 
+
+### 2.1.1 ( 2025-10-24 )
+- [x] Dependency update. Ask-for-promise@3.1.0;
+
+
+
 ### 2.1.0 ( 2025-10-21 )
 - [x] Added JSDoc documentation to the library source code;
 - [x] Implemented TypeScript declaration file generation from JSDoc comments using TypeScript compiler;

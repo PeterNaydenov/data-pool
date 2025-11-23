@@ -21,7 +21,7 @@
   /**
    * @interface AskObject
    * @description Object with promise and related helper functions
-   * @property {Promise} [promise] - Promise object if a single promise is created
+   * @property {Promise} promise - Promise object
    * @property {Array<AskObject>|null} [promises] - Array of promises if multiple promises are created
    * @property {Function} done - Resolve function
    * @property {Function} cancel - Reject function
@@ -119,8 +119,8 @@
                                                     done   = resolve;
                                                     cancel = reject;
                                    });
-     /** @type {AskObject} */ 
-     const askObject = { 
+      /** @type {AskObject} */
+      const askObject = {
                  promise    : x
                , promises   : null
                , done       
@@ -199,8 +199,8 @@
 
 
 
-                                      /** @type {AskObject} */
-                                      const askObject = {
+                                       /** @type {AskObject} */
+                                       const askObject = {
                                                     promise    : Promise.all ( listOfPromises )
                                                   , promises   : listOfPromiseObjects
                                                   , done       : ( response )  => { listOfPromiseObjects.forEach ( o => o.done( response  ) );}

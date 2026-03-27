@@ -3,6 +3,7 @@
     "allowJs": true,
     "declaration": true,
     "emitDeclarationOnly": true,
+    "rootDir": "./src",
     "outDir": "types",
     "target": "ES2020",
     "module": "ES2020",

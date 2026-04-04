@@ -2,6 +2,11 @@
 
 
 
+### 2.1.2 ( 2026-04-04 )
+- [x] Dependency update. @peter.naydenov/notice@2.4.2;
+
+
+
 ### 2.1.1 ( 2025-10-24 )
 - [x] Dependency update. Ask-for-promise@3.1.0;
 

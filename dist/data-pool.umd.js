@@ -496,12 +496,11 @@
                                               console.log ( ...args );
                                               console.log ( '^----' );
                                           }
-                                          
                                   }
 
                               function exeCallback ( name ) {
                                           let stopped = false;
-                                          if ( name === '*' )   return    
+                                          if ( name === '*' )   return
                                           if ( ignore.has(name) )   return
                                           scroll[name].every ( fn => {
                                                               const r = fn ( ...args );

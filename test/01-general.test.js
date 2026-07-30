@@ -1,6 +1,6 @@
-import { expect }    from 'chai'
-import dataPool      from '../src/main.js'
-import askForPromise from 'ask-for-promise'
+import { describe, it, expect } from 'vitest';
+import dataPool      from '../src/main.js';
+import askForPromise from 'ask-for-promise';
 
 
 
@@ -13,8 +13,8 @@ it ( 'Write/read a string', () => {
 
     // Array where first string is keyList or key and second is the name of the store
     let [name,sport] = pool.get ( ['name,sport', 'first'] )
-    expect ( name  ).to.be.equal ( 'Peter' )
-    expect ( sport ).to.be.equal ( 'fencing' )
+    expect ( name  ).toBe ( 'Peter' )
+    expect ( sport ).toBe ( 'fencing' )
 }) // it Write/read a string
 
 
@@ -26,8 +26,8 @@ it ( 'Write/read using default store', () => {
 
     // If second element is not provided, then store name will be set as 'default'
     let [name,sport] = pool.get ( ['name,sport'] )
-    expect ( name  ).to.be.equal ( 'Peter' )
-    expect ( sport ).to.be.equal ( 'fencing' )
+    expect ( name  ).toBe ( 'Peter' )
+    expect ( sport ).toBe ( 'fencing' )
 }) // it Write/read using default store
 
 
@@ -38,10 +38,10 @@ it ( 'Write/read key with extension', () => {
     pool.set ( ['sport', 'first' ], 'fencing' )
 
     let s = pool.get ( ['name', 'first'] )
-    expect ( s ).to.be.equal ( null )
+    expect ( s ).toBe ( null )
 
     let name = pool.get ( ['name/player', 'first'] )
-    expect ( name ).to.be.equal ( 'Peter' )
+    expect ( name ).toBe ( 'Peter' )
 }) // it Write/read key with extension
 
 
@@ -58,22 +58,22 @@ it ( 'Write/read immutable objects', () => {
 
     // Check if the data was changed
     const user = pool.get ([ 'user', 'first'])
-    expect ( user.name ).to.be.equal ( 'Peter' ) 
-    expect ( user.sport ).to.be.equal ( 'fencing' )
+    expect ( user.name ).toBe ( 'Peter' )
+    expect ( user.sport ).toBe ( 'fencing' )
 
     // Manipulate the recived data outside of the pool
     user.name = 'Ivan'
     user.sport = 'skating'
 
     // Check if the data inside the pool was not changed
-    const user2 = pool.get ([ 'user', 'first']) 
-    expect ( user2.name ).to.be.equal ( 'Peter' ) 
-    expect ( user2.sport ).to.be.equal ( 'fencing' )        
+    const user2 = pool.get ([ 'user', 'first'])
+    expect ( user2.name ).toBe ( 'Peter' )
+    expect ( user2.sport ).toBe ( 'fencing' )
 }) // it Write/read immutable objects
 
 
 
-it ( 'Watch store for changes', done => {
+it ( 'Watch store for changes', () => new Promise ( done => {
     const pool = dataPool ();
     let data = {
                 name  : 'Peter'
@@ -83,21 +83,21 @@ it ( 'Watch store for changes', done => {
     pool.on ( 'first', ( key, oldData, newData ) => {
                 // First call oldData will be undefined
                 if ( !oldData ) {
-                        expect ( key     ).to.be.equal ( 'user' )
-                        expect ( oldData ).to.be.equal ( undefined )
-                        expect ( newData.name  ).to.be.equal ( 'Peter' )
-                        expect ( newData.sport ).to.be.equal ( 'fencing' )
+                        expect ( key     ).toBe ( 'user' )
+                        expect ( oldData ).toBe ( undefined )
+                        expect ( newData.name  ).toBe ( 'Peter' )
+                        expect ( newData.sport ).toBe ( 'fencing' )
                     }
                 else {
-                        expect ( key     ).to.be.equal ( 'user' )
-                        expect ( oldData.name  ).to.be.equal ( 'Peter' )
-                        expect ( newData ).to.be.equal ( 'Peter' )
+                        expect ( key     ).toBe ( 'user' )
+                        expect ( oldData.name  ).toBe ( 'Peter' )
+                        expect ( newData ).toBe ( 'Peter' )
                         done ()
                     }
         })
     pool.set ( ['user', 'first'], data )
     pool.set ( ['user', 'first'], 'Peter' )
-}) // it watch store for changes
+})) // it watch store for changes
 
 
 
@@ -110,8 +110,8 @@ it ( 'Multiple storages are indipendent', () => {
     pool1.set ( ['name', 'first'], 'Peter' )
     pool2.set ( ['name', 'first'], 'Ivan' )
 
-    expect ( pool2.get (['name', 'first']) ).to.be.equal ( 'Ivan' )
-    expect ( pool1.get (['name', 'first']) ).to.be.equal ( 'Peter' )
+    expect ( pool2.get (['name', 'first']) ).toBe ( 'Ivan' )
+    expect ( pool1.get (['name', 'first']) ).toBe ( 'Peter' )
 }) // it multiple storages are indipendent
 
 
@@ -122,8 +122,8 @@ it ( 'List stores', () => {
     pool.set ( [ 'connections', 'second' ], 123 )
 
     const ls = pool.list();
-    expect ( ls.includes('first')  ).to.be.equal ( true )
-    expect ( ls.includes('second')).to.be.equal ( true )
+    expect ( ls.includes('first')  ).toBe ( true )
+    expect ( ls.includes('second')).toBe ( true )
 }) // it list stores
 
 
@@ -136,7 +136,7 @@ it ('Import store', () => {
                 };
         pool.importStore ( 'test', data )
         let r = pool.get (['name', 'test'])
-        expect ( r ).to.be.equal ( 'Peter' )
+        expect ( r ).toBe ( 'Peter' )
 }) // it import store
 
 
@@ -151,8 +151,8 @@ it ('Export store', () => {
     pool.importStore ( 'test', data )
     data.sport = 'skating'
     let r = pool.exportStore ( 'test' )
-    expect ( r.name ).to.be.equal ( 'Peter' )
-    expect ( r.sport ).to.be.equal ( 'fencing' )
+    expect ( r.name ).toBe ( 'Peter' )
+    expect ( r.sport ).toBe ( 'fencing' )
 }) // it export store
 
 
@@ -165,7 +165,7 @@ it ( 'Export non existing store', () => {
             };
     pool.importStore ( 'test', data )
     let r = pool.exportStore ( 'something' )
-    expect ( r ).to.be.equal ( null )
+    expect ( r ).toBe ( null )
 }) // it export non existing store
 
 
@@ -176,10 +176,10 @@ it ( 'Store listing', () => {
     pool.set ( ['name', 'beta'], 'Stefan' )
     pool.set ( ['name', 'gama'], 'Ivan'   )
     const list = pool.list ();
-    expect ( list.length ).to.be.equal ( 3 )
-    expect ( list.includes('alpha')).to.be.true
-    expect ( list.includes('beta')).to.be.true
-    expect ( list.includes('gama')).to.be.true
+    expect ( list.length ).toBe ( 3 )
+    expect ( list.includes('alpha')).toBe ( true )
+    expect ( list.includes('beta')).toBe ( true )
+    expect ( list.includes('gama')).toBe ( true )
 }) // it store listing
 
 
@@ -190,7 +190,7 @@ it ( 'Response with dummies', () => {
         // Set a dummy. Dummy should overwrite the original data
         pool.setDummy ( [ 'sport', 'fake'], dummy )
         let r = pool.get ( ['sport', 'fake'] )
-        expect ( r ).to.be.equal ( 'skating' ) // the fake response
+        expect ( r ).toBe ( 'skating' ) // the fake response
 }) // it Response with dummies
 
 
@@ -209,35 +209,35 @@ it ( 'Dummies overwrite real data', () => {
 
     // Dummies overwrite the real data
     let r = pool.get ( ['sport', 'fake'] )
-    expect ( r ).to.be.equal ( 'skating' )   // Pool will return the dummy
-                    
+    expect ( r ).toBe ( 'skating' )   // Pool will return the dummy
+
     // Real data is not changed
-    let x = pool.exportStore ( 'fake' )   
-    expect ( x.sport ).to.be.equal ( 'fencing' )   // Dummy not overwrite the real data.
+    let x = pool.exportStore ( 'fake' )
+    expect ( x.sport ).toBe ( 'fencing' )   // Dummy not overwrite the real data.
 
     // Access to real data is recovered after removing the dummy
     pool.removeDummy ( ['sport', 'fake'] )
     let r1 = pool.get ( ['sport', 'fake'] )
-    expect ( r1 ).to.be.equal ( 'fencing' )        
+    expect ( r1 ).toBe ( 'fencing' )
 }) // dummies overwrite real data
 
 
 
-it ( 'Record with ttl', done => {
+it ( 'Record with ttl', () => new Promise ( done => {
     const pool = dataPool ();
     pool.setTTL ( [ 'name', 'demo'], 10 ) // 10 seconds after insertion of new data, the record should be removed
     pool.set ( [ 'name', 'demo'], 'Peter' )
     setTimeout ( () => {
                     let r = pool.get ( ['name', 'demo'] )
                     // data is no longer available
-                    expect ( r ).to.be.equal ( null )
+                    expect ( r ).toBe ( null )
                     done ()
             }, 30 )
-}) // it record with ttl
+})) // it record with ttl
 
 
 
-it ( 'Use API with ttl', done => {
+it ( 'Use API with ttl', () => new Promise ( done => {
     const 
           pool = dataPool ()
         , firstRead = askForPromise ()
@@ -254,24 +254,24 @@ it ( 'Use API with ttl', done => {
     pool.setTTL ( ['getName', 'API'], 30 ) // Keep response for 30 seconds only
     pool.get (['getName', 'API' ])
         .then ( r => {  // Will call API method
-                        expect ( r ).to.be.equal ( 'Peter' )
+                        expect ( r ).toBe ( 'Peter' )
                         // API methods are not immutable. We can modify them if needed
                         API.getName = () => new Promise ( (resolve) => resolve('Stefan')   ) // Modify API method
                         return pool.get ([ 'getName', 'API' ])
             })
         .then ( r => {  // Receive result from cache
-                        expect ( r ).to.be.equal ( 'Peter' )
+                        expect ( r ).toBe ( 'Peter' )
                         setTimeout ( () => firstRead.done (), 50)   // Wait for the record expire
             })
 
     firstRead.onComplete ( () => {
                         pool.get ([ 'getName', 'API' ])
                             .then ( r => {
-                                        expect ( r ).to.be.equal ( 'Stefan' )
+                                        expect ( r ).toBe ( 'Stefan' )
                                         done ()
                                 })
         })
-}) // it use API with ttl
+})) // it use API with ttl
 
 
 
@@ -279,28 +279,28 @@ it ( 'Check with "has"', () => {
     const pool = dataPool ();
     pool.set ( ['greeting', 'special'], ['Hello', 'hi', 'Hey'] )
     // Test for store with name 'test'. No properties defined
-    expect ( pool.has ( 'test' )).to.be.equal ( false )
+    expect ( pool.has ( 'test' )).toBe ( false )
     // Test for property 'k' in store 'test'.
-    expect ( pool.has ( ['k', 'test']) ).to.be.equal ( false )
+    expect ( pool.has ( ['k', 'test']) ).toBe ( false )
     // Import an empty store as a 'test'
     pool.importStore ( 'test', {} )
     // Test for store with name 'test'
-    expect ( pool.has ('test')).to.be.equal ( true )
-    expect ( pool.has ( ['k', 'test'])).to.be.equal ( false )
+    expect ( pool.has ('test')).toBe ( true )
+    expect ( pool.has ( ['k', 'test'])).toBe ( false )
     pool.set (['k', 'test'], 'Peter' )
-    // expect ( pool.has (['k', 'test'])).to.be.true
+    // expect ( pool.has (['k', 'test'])).toBe ( true )
 
     pool.importStore ( 'test2', {} )
     // Check for list of stores
-    expect ( pool.has ( 'test, test2' )).to.be.equal ( true )
+    expect ( pool.has ( 'test, test2' )).toBe ( true )
 
-    expect ( pool.has ( ['greeting', 'special'] ) ).to.be.equal ( true )
+    expect ( pool.has ( ['greeting', 'special'] ) ).toBe ( true )
 
 }) // it check with "has"
 
 
 
-it ( 'Update record on interval', done => {
+it ( 'Update record on interval', () => new Promise ( done => {
     const pool = dataPool ();
 
     let counter = 0;
@@ -314,14 +314,14 @@ it ( 'Update record on interval', done => {
     pool.get ( [ 'getCounter', 'API' ])
     setTimeout ( () => pool.removeUpdate (['getCounter', 'API']), 25 )
     setTimeout ( () => {
-                    expect ( counter ).to.be.equal ( 3 )
+                    expect ( counter ).toBe ( 3 )
                     done ()
             } , 46 )
-}) // it Update record on interval
+})) // it Update record on interval
 
 
 
-it ( 'Remove API. Async API', done => {
+it ( 'Remove API. Async API', () => new Promise ( done => {
     const pool = dataPool ();
     let counter = 0;
     const API = {
@@ -335,14 +335,14 @@ it ( 'Remove API. Async API', done => {
 
     pool.get ( [ 'getCounter', 'API'] )
     setTimeout ( () => {
-                    expect ( counter ).to.be.equal ( 3 )
+                    expect ( counter ).toBe ( 3 )
                     done ()
             } , 60 )
-}) // remove API
+})) // remove API
 
 
 
-it ( 'API with sync methods', done => {
+it ( 'API with sync methods', () => new Promise ( done => {
     const pool = dataPool ();
     let counter = 0;
     const API = {
@@ -354,14 +354,14 @@ it ( 'API with sync methods', done => {
 
     pool.get ( [ 'getCounter', 'API'] )
     setTimeout ( () => {
-                    expect ( counter ).to.be.equal ( 3 )
+                    expect ( counter ).toBe ( 3 )
                     done ()
             } , 60 )
-}) // API with sync methods
+})) // API with sync methods
 
 
 
-it ( 'No cache', done => {
+it ( 'No cache', () => new Promise ( done => {
     const pool = dataPool ();
     let counter = 0;
     const API = {
@@ -383,14 +383,14 @@ it ( 'No cache', done => {
                     return pool.get ( [ 'getCounter', 'API']  )   // request => result from cache. Counter == 3
             })
         .then ( r => {
-                    expect ( counter ).to.be.equal ( 3 )
+                    expect ( counter ).toBe ( 3 )
                     done ()
             })
-}) // it no cache
+})) // it no cache
 
 
 
-it ( 'Flush', done => {
+it ( 'Flush', () => new Promise ( done => {
     const pool = dataPool ();
 
     pool.set ( ['name', 'first'], 'Peter' )
@@ -398,22 +398,22 @@ it ( 'Flush', done => {
 
     Promise.resolve ( pool.get ( ['name', 'first'] ) )
         .then ( r => {
-                expect ( r ).to.be.equal ( 'Peter' )
+                expect ( r ).toBe ( 'Peter' )
                 pool.flush ( 'first' ) // Flush only store 'first'. String arguments are comma separated list of stores for flush.
                 // to delete both stores use pool.flush ( 'first,second' )
                 return Promise.resolve ( pool.get ( ['name', 'first'] ))
             })
         .then ( r => {
-                expect ( r ).to.be.equal ( null ) // Data is no longer available because it was flushed
+                expect ( r ).toBe ( null ) // Data is no longer available because it was flushed
                 return Promise.resolve ( pool.get ( ['name', 'second'] ))
             })
         .then ( r => {
-                expect ( r ).to.be.equal ( 'Stefan' )
+                expect ( r ).toBe ( 'Stefan' )
                 pool.flush ( [ 'name', 'second'] ) // Flush specific property and store
                 return Promise.resolve ( pool.get ( ['name', 'second'] ))
             })
         .then ( r => {
-                expect ( r ).to.be.equal ( null ) // Data is no longer available because it was flushed
+                expect ( r ).toBe ( null ) // Data is no longer available because it was flushed
                 pool.flush () // No arguments => Flush everything
                 return Promise.all ([
                                   pool.get ( ['name', 'first'] )
@@ -421,10 +421,10 @@ it ( 'Flush', done => {
                             ])
             })
         .then ( ([first, second]) => {
-                expect ( first  ).to.be.equal ( null )
-                expect ( second ).to.be.equal ( null )
+                expect ( first  ).toBe ( null )
+                expect ( second ).toBe ( null )
                 done ()
             })
-}) // it flush
+})) // it flush
 
 }) // describe

@@ -1,92 +1,112 @@
-export default dataPool;
+/**
+ * Data Pool
+ *
+ * Data layer for node apps and single page application (SPA). Data-pool simplifies
+ * data maintenance with:
+ * - Multiple data stores
+ * - Stores with immutable data
+ * - Signal stores with computed properties and effects
+ * - API based stores
+ * - Caching data records from API requests
+ * - Optional TTL for each data record
+ * - Optional update schedule for each data record
+ * - Mechanism to fake API request responses
+ *
+ * History notes:
+ * - Development started on October 27th, 2022
+ * - Published on GitHub for first time: November 7th, 2022
+ *
+ * @returns {DataPoolAPI} The data-pool API object with methods for data management.
+ */
 export type DataPoolAPI = {
     /**
-     * - Returns list of all existing stores.
+     * (): string[]} list - Returns list of all existing stores.
      */
-    list: () => string[];
+    : Function;
     /**
-     * - Checks if store or store-key exists.
+     * (string|Array): boolean} has - Checks if store or store-key exists.
      */
-    has: (arg0: string | any[]) => boolean;
+    : Function;
     /**
-     * - Returns requested data or fetches from API.
+     * (Array): any} get - Returns requested data or fetches from API.
      */
-    get: (arg0: any[]) => any;
+    : Function;
     /**
-     * - Creates or updates a data record.
+     * (Array, any, function?): boolean} set - Creates or updates a data record.
      */
-    set: (arg0: any[], arg1: any, arg2: Function | null) => boolean;
+    : Function;
     /**
-     * - Creates a computed property in signal stores.
+     * (Array, function): void} setComputed - Creates a computed property in signal stores.
      */
-    setComputed: (arg0: any[], arg1: Function) => void;
+    : Function;
     /**
-     * - Creates a signal effect.
+     * (function): void} setEffect - Creates a signal effect.
      */
-    setEffect: (arg0: Function) => void;
+    : Function;
     /**
-     * - Defines stores as signal stores.
+     * (string|string[]): void} setSignalStore - Defines stores as signal stores.
      */
-    setSignalStore: (arg0: string | string[]) => void;
+    : Function;
     /**
-     * - Adds data as a store.
+     * (string, Object): void} importStore - Adds data as a store.
      */
-    importStore: (arg0: string, arg1: Object) => void;
+    : Function;
     /**
-     * - Exports store as an object.
+     * (string): Object|null} exportStore - Exports store as an object.
      */
-    exportStore: (arg0: string) => Object | null;
+    : Function;
     /**
-     * - Listens for store changes.
+     * (string, function): void} on - Listens for store changes.
      */
-    on: (arg0: string, arg1: Function) => void;
+    : Function;
     /**
-     * - Associates APIs with data-pool.
+     * (Object): void} addApi - Associates APIs with data-pool.
      */
-    addApi: (arg0: Object) => void;
+    : Function;
     /**
-     * - Removes API associations.
+     * (string): void} removeApi - Removes API associations.
      */
-    removeApi: (arg0: string) => void;
+    : Function;
     /**
-     * - Sets recurring updates for API records.
+     * (Array, number): void} setUpdate - Sets recurring updates for API records.
      */
-    setUpdate: (arg0: any[], arg1: number) => void;
+    : Function;
     /**
-     * - Removes recurring updates.
+     * (Array): void} removeUpdate - Removes recurring updates.
      */
-    removeUpdate: (arg0: any[]) => void;
+    : Function;
     /**
-     * - Sets TTL for a record.
+     * (Array, number): void} setTTL - Sets TTL for a record.
      */
-    setTTL: (arg0: any[], arg1: number) => void;
+    : Function;
     /**
-     * - Removes TTL.
+     * (Array): void} removeTTL - Removes TTL.
      */
-    removeTTL: (arg0: any[]) => void;
+    : Function;
     /**
-     * - Sets dummy data source.
+     * (Array, function): void} setDummy - Sets dummy data source.
      */
-    setDummy: (arg0: any[], arg1: Function) => void;
+    : Function;
     /**
-     * - Removes dummy data source.
+     * (Array): void} removeDummy - Removes dummy data source.
      */
-    removeDummy: (arg0: any[]) => void;
+    : Function;
     /**
-     * - Sets no-cache for a record.
+     * (Array): void} setNoCache - Sets no-cache for a record.
      */
-    setNoCache: (arg0: any[]) => void;
+    : Function;
     /**
-     * - Removes no-cache setting.
+     * (Array): void} removeNoCache - Removes no-cache setting.
      */
-    removeNoCache: (arg0: any[]) => void;
+    : Function;
     /**
-     * - Flushes data from stores.
+     * (string?|Array?): void} flush - Flushes data from stores.
      */
-    flush: (arg0: string, arg1: unknown | (any[] | null)) => void;
+    : Function;
 };
 /**
  * Creates a new data-pool instance.
  * @returns {DataPoolAPI} The data-pool API object.
  */
 declare function dataPool(): DataPoolAPI;
+export default dataPool;

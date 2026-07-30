@@ -2,6 +2,17 @@
 
 
 
+### 2.2.0 ( 2026-07-30 )
+- [x] Migrate tests from mocha to vitest;
+- [x] Setting coverage-v8 for vitest instead of c8;
+- [x] Dependency update. @peter.naydenov/notice@2.5.0;
+- [x] Dependency update. @peter.naydenov/walk@5.0.7;
+- [x] Dependency update. @peter.naydenov/signals@1.3.0;
+- [x] Dev deps update. Typescript v.7.0.2;
+- [x] Types folder was created;
+
+
+
 ### 2.1.4 ( 2026-07-24 )
 - [x] Fix: `npm run cover` crashed on Node 26 with `ReferenceError: require is not defined in ES module scope, you can use import instead` — thrown from the bundled yargs in `c8@^11.0.0`. Bumped `c8` to `^12.0.0` (which pulls in yargs `^18.0.0`, friendly to Node 26's strict ESM resolution). Coverage now runs end-to-end: 27/27 tests pass, **95.38% statements, 86.48% branches, 96.87% functions, 95.38% lines** (537/563, 128/148, 31/32, 537/563). Library code unchanged — this is a pure dev-tool fix;
 - [x] Types update;

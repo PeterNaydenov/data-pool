@@ -2,5 +2,4 @@
 /node_modules
 /coverage
 /graphify-out
-.graphify_cached.json
-.graphify_uncached.txt
+.graphify_*

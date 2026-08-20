@@ -19,24 +19,80 @@
 
 
   /**
-   * @interface AskObject
-   * @description Object with promise and related helper functions
-   * @property {Promise} promise - Promise object
-   * @property {Array<AskObject>|null} [promises] - Array of promises if multiple promises are created
-   * @property {Function} done - Resolve function
-   * @property {Function} cancel - Reject function
-   * @property {Function} each - Callback function to be called for each list item
-   * @property {Function} onComplete - Function to be called after promise is resolved
-   * @property {Function} timeout - Function to set timeout on promise
+   * @typedef {Object} EachContext
+   * @description Per-item context passed to the `each` callback. Carries the
+   *   underlying value plus per-item controls (`done` / `cancel` / `timeout`).
+   * @property {any} value - The list item passed to `askForPromise(list)`. In
+   *   single-promise mode this is `null`.
+   * @property {(value?: any) => void} done - Resolves this single item. In list
+   *   mode this settles one sub-promise; in single mode it settles the main
+   *   promise. If a per-item or list-level `.timeout()` is active, also
+   *   clears the pending timer for this item.
+   * @property {(reason?: any) => void} cancel - Rejects this single item. If
+   *   a per-item or list-level `.timeout()` is active, also clears the
+   *   pending timer for this item.
+   * @property {(ttl: number, expMsg: any) => AskObject} timeout - Per-item
+   *   timeout helper. In single mode the returned `AskObject` is the same one.
    */
 
 
 
   /**
-   * Creates object with promise and related helper functions
+   * @callback EachCallback
+   * @description Callback invoked once per list item by `askObject.each()`.
+   * @param {EachContext} ctx - Per-item context (value + done / cancel / timeout).
+   * @param {number | undefined} index - Position of the item in the input list.
+   *   `undefined` when `each` is called on a single-mode `AskObject`
+   *   (no list).
+   * @param {...any} args - Extra arguments forwarded from `task.each(cbFn, ...args)`.
+   */
+
+
+
+  /**
+   * @typedef {Object} AskObject
+   * @description Object with a promise and related helper functions. Returned
+   *   by `askForPromise()`, `askForPromise(list)`, `askForPromise.sequence(...)`
+   *   and `askForPromise.all(...)`.
+   * @property {Promise<any>} promise - The underlying promise. In list mode this
+   *   is `Promise.all(promises)` and resolves to an array of values in input
+   *   order once every sub-promise resolves.
+   * @property {AskObject[]|null} promises - `AskObject[]` in list mode, `null`
+   *   in single mode. Use `task.promises[i].done(value)` to resolve a single item.
+   * @property {(value?: any) => void} done - Resolves the promise (or all
+   *   sub-promises with the same value, in list mode). If a `.timeout()` is
+   *   active on this `AskObject`, also clears the pending timer so the
+   *   underlying resources can be released immediately.
+   * @property {(reason?: any) => void} cancel - Rejects the promise (or all
+   *   sub-promises with the same reason, in list mode). If a `.timeout()` is
+   *   active on this `AskObject`, also clears the pending timer.
+   * @property {(cbFn: EachCallback, ...args: any[]) => void} each - Iterates
+   *   the items and calls `cbFn({ value, done, cancel, timeout }, index, ...args)`
+   *   for each. In single mode the callback is invoked once with `value: null`
+   *   and `index: undefined` (the second positional argument is still
+   *   present, just `undefined`).
+   * @property {(fx: (result: any) => void, rejectFx?: ((error: any) => void) | null) => void} onComplete
+   *   Sugar for `promise.then`. Pass a second function as the reject handler.
+   * @property {(ttl: number, expMsg: any) => AskObject} timeout - Arms a
+   *   `ttl`-millisecond timer. On expiry, the task settles with `expMsg`:
+   *   `onComplete` is rewired to return the fallback, AND the underlying
+   *   `task.promise` is also settled with `expMsg` (so `await task.promise`
+   *   and `task.onComplete(...)` agree). In list mode each still-pending
+   *   sub-promise is replaced with `expMsg`, while sub-promises that already
+   *   settled keep their real value. Returns the same `AskObject` so the
+   *   call can be chained.
+   */
+
+
+
+  /**
+   * Creates an `AskObject` with a single promise, or one promise per item in
+   * `list` (in which case all sub-promises are bundled into a single
+   * `AskObject` whose `promise` is `Promise.all(...)`).
    * @function askForPromise
-   * @param {Array<any>} [list] - List of items that need to have a corresponding promise.(optional)
-   * @returns {AskObject} Object with promise and related helper functions
+   * @param {Array<any>} [list] - Optional. List of items; each gets its own
+   *   sub-promise. Omit for a single promise.
+   * @returns {AskObject} Object with the promise and related helper functions.
    */
   function askForPromise ( list ) {
           if ( list ) return _manyPromises ( list )
@@ -46,19 +102,30 @@
 
 
   /**
+   * Executes a list of step functions one after the other. Each step is
+   * called with the original `...args` plus the result of the previous step
+   * appended at the end, so a step's resolved value threads through to the
+   * next. The returned `task.promise` resolves to an array of every step's
+   * resolved value once the chain completes; if any step rejects (or throws
+   * synchronously) the task rejects with that error and the chain stops.
    * @function sequence
-   * @description Executes list of functions that return a promise in sequence.
-   * @param {Array<Function>} list - List of functions that return a promise
-   * @param {...any} args - Arguments to be passed to each function in the list
-   * @returns {AskObject} - Object with promise and related helper functions
+   * @memberof askForPromise
+   * @param {Array<(...args: any[]) => any>} list - Steps; each is expected to
+   *   return a promise (a non-thenable return is accepted via `Promise.resolve`
+   *   and treated as a resolved value).
+   * @param {...any} args - Arguments passed to the first step. Each step
+   *   additionally receives the previous step's resolved value as its last
+   *   argument.
+   * @returns {AskObject} `AskObject` whose `promise` resolves to the array of
+   *   step results (in order), or rejects on the first step failure.
    */
    askForPromise.sequence = function promiseInSequence ( list, ...args ) {
-    const 
+    const
           task = askForPromise ()
         , result = []
         ;
 
-    function* listGen ( n ) {   for ( const el of n ) { yield el; }} 
+    function* listGen ( n ) {   for ( const el of n ) { yield el; }}
     const g = listGen ( list );
 
     function wait ( n, ...args ) {   // Recursive function for calling function list in sequence
@@ -66,35 +133,67 @@
                  task.done ( result );
                  return
             }
-        n.value (...args).then ( r => {
+        // Defer evaluation so a synchronous throw inside the step becomes a
+        // promise rejection (caught below) instead of escaping `sequence()`.
+        Promise.resolve ().then ( () => n.value (...args) ).then ( r => {
                 result.push ( r );
                 wait( g.next(), ...args, r );
-            }); 
+            }, err => {
+                task.cancel ( err );
+            });
         } // wait func.
 
-    wait ( g.next(), ...args ); // Starting with iteration of list
+    try {
+        wait ( g.next(), ...args ); // Starting with iteration of list
+    } catch ( err ) {
+        task.cancel ( err );
+    }
     return task
   }; // promiseInSequence func.
 
 
 
   /**
+   * Executes a list of step functions in parallel. Each entry in `list` may
+   * be either a function (called with `...args`) or an already-running
+   * promise / thenable. The returned `task.promise` resolves to an array of
+   * results in declaration order once every entry resolves, matching
+   * `Promise.all` semantics; if any entry rejects (or a step function
+   * throws synchronously) the task rejects with that error.
    * @function all
-   * @description Executes list of functions that return a promise in parallel.
-   * @param {Array<Function>} list - List of functions that return a promise
-   * @param {...any} args - Arguments to be passed to each function in the list
-   * @returns {AskObject} - Object with promise and related helper functions
+   * @memberof askForPromise
+   * @param {Array<((...args: any[]) => any) | Promise<any>>} list - Steps to
+   *   run in parallel; each is either a function or a thenable.
+   * @param {...any} args - Arguments passed to each step function. Ignored
+   *   for thenable entries.
+   * @returns {AskObject} `AskObject` whose `promise` resolves to the array of
+   *   step results (in order), or rejects on the first step failure.
    */
   askForPromise.all = function promiseAll ( list, ...args ) {
-    const 
+    const
           task = askForPromise ()
         , result = []
-        , r = list.map ( (n,i) => { 
-                              return (typeof n === 'function') ? n(...args).then ( r => result[i] = r   ) 
-                                                               : n.then ( r => result[i] = r   )
-                          })
         ;
-    Promise.all ( r ).then ( () => task.done(result)   );
+    let r;
+    try {
+        r = list.map ( (n,i) => {
+                              // Defer evaluation so a synchronous throw inside a step function
+                              // becomes a promise rejection instead of escaping `all()`.
+                              return Promise.resolve ().then ( () =>
+                                  (typeof n === 'function') ? n(...args) : n
+                              ).then (
+                                  r => result[i] = r,
+                                  err => { throw err }   // Re-throw so Promise.all surfaces the rejection
+                              )
+                          });
+    } catch ( err ) {
+        task.cancel ( err );
+        return task
+    }
+    Promise.all ( r ).then (
+        () => task.done(result),
+        err => task.cancel(err)
+    );
     return task
   }; // promiseAll func.
 
@@ -103,131 +202,139 @@
 
 
   /**
-   * Creates a single promise with helper functions.
-   * @function _singlePromise Creates a single promise
-   * @returns {AskObject} Object containing the promise and related helper functions such as:
-   * - promise: The promise itself
-   * - done: Function to resolve the promise
-   * - cancel: Function to reject the promise
-   * - each: Function to iterate over a single promise (no-op for a single promise)
-   * - onComplete: Function to be called after the promise is resolved
-   * - timeout: Function to set a timeout on the promise
+   * Creates a single-promise `AskObject`. Internal — use `askForPromise()`.
+   * @private
+   * @returns {AskObject} `AskObject` with a single underlying promise and the
+   *   standard helper functions. The `each` helper, when called, invokes its
+   *   callback once with `{ value: null, done, cancel, timeout }` and
+   *   `index: undefined` (the second positional argument is present but
+   *   `undefined`, matching the list-mode `each` signature).
    */
   function _singlePromise () {
     let  done, cancel;
-    const x = new Promise ( (resolve, reject ) => { 
+    const x = new Promise ( (resolve, reject ) => {
                                                     done   = resolve;
                                                     cancel = reject;
                                    });
-      /** @type {AskObject} */
+      // Internal slot for the active timer (if any). Stored on the askObject
+      // (not in a closure variable) so that the timer-clearing wrappers in
+      // done/cancel, the timer-setting setter in _timeout, and the
+      // askObject's own self-references all live on the same object — which
+      // means dropping the askObject reference releases the whole cycle.
       const askObject = {
-                 promise    : x
-               , promises   : null
-               , done       
-               , cancel     
-               , each       : () => {}
-               , onComplete : _after(x)
-               , timeout    : () => {}
+                 promise       : x
+               , promises      : null
+               , _activeTimer  : null
+               , each          : () => {}
+               , onComplete    : _after(x)
+               , timeout       : () => {}
              };
 
-      askObject.timeout = _timeout ( false, askObject );
-      askObject.each = (cbFn, ...args) => { cbFn({value: null, done: done, cancel: cancel, timeout: askObject.timeout}, ...args); };
-      
+      // Use a WeakRef so the wrapped done/cancel (and the setTimeout callback
+      // in _timeout) can settle the task and access _activeTimer without
+      // strongly capturing the askObject. Strong capture (e.g. via `const
+      // self = this` in a regular function, or via an arrow function) would
+      // create a cycle `askObject → askObject.done → askObject` that V8's
+      // tracing collector does NOT reclaim, leaving the askObject live until
+      // its timer fires. The WeakRef keeps the cycle breakable.
+      const askObjectRef = new WeakRef(askObject);
+
+      // Wrap done/cancel so they clear the active timer (if any) before
+      // settling the promise. Settling the promise is a no-op if it's already
+      // settled, so the wrapped functions are safe to call from any path
+      // (askObject.done/cancel, the each callback, or the timer's own callback).
+      // These are regular functions — they use the WeakRef to reach the
+      // askObject instead of capturing it via closure — so the askObject can
+      // be garbage-collected even if these methods are still referenced.
+      askObject.done   = function ( value )  { const o = askObjectRef.deref(); if (o !== undefined && o._activeTimer !== null) { clearTimeout(o._activeTimer); o._activeTimer = null; } done(value);   };
+      askObject.cancel = function ( reason ) { const o = askObjectRef.deref(); if (o !== undefined && o._activeTimer !== null) { clearTimeout(o._activeTimer); o._activeTimer = null; } cancel(reason); };
+
+      askObject.timeout = _timeout ( false );
+      askObject.each = function (cbFn, ...args) { cbFn({value: null, done: askObject.done, cancel: askObject.cancel, timeout: this.timeout}, ...args); };
+
       return askObject
      } // _singlePromise func.
 
 
 
   /**
-   * Creates an object with multiple promises and related helper functions.
-   * @param {Array<any>} list - List of items that need to have a corresponding promise.
-   * @returns {AskObject} Object containing the promises and related helper functions such as:
-   * - promise: It's equal to Promise.all (list of promises)
-   * - promises: An array of single promise objects
-   * - done: Function to resolve all promises
-   * - cancel: Function to reject all promises
-   * - each: Function to iterate over the promises and call a callback function for each promise
-   * - onComplete: Function to be called after all promises are resolved
-   * - timeout: Function to set a timeout on all promises
+   * Creates a list-mode `AskObject` where each item in `list` gets its own
+   * sub-promise, all controlled by a single returned `AskObject`. Internal —
+   * use `askForPromise(list)`.
+   * @private
+   * @param {Array<any>} list - List of items; each becomes a separate
+   *   sub-promise.
+   * @returns {AskObject} `AskObject` whose `promise` is `Promise.all` over
+   *   every sub-promise, `promises` is the array of sub-`AskObject`s, and
+   *   `done` / `cancel` settle every sub-promise with the same value.
    */
    function _manyPromises ( list ) {
                                       let listOfPromiseObjects = list.map ( el => _singlePromise() );
                                       let listOfPromises   = listOfPromiseObjects.map ( o => o.promise );
-                                      
+
                                       listOfPromiseObjects [ 'promises' ] = listOfPromiseObjects;
                                       let onComplete = _after ( Promise.all (listOfPromises) );
 
-
-
-                                    /**
-                                     * Reads the state of a promise
-                                     * @function readPromiseState
-                                     * @description Returns the state of the promise as string: 'pending', 'fulfilled', or 'rejected'
-                                     * @param {Promise} promise - The promise to read the state of
-                                     * @returns {string} The state of the promise as string
-                                     */
-                                      function readPromiseState ( promise ) {
-                                              let state = 'pending';
-                                              promise.then ( () => state = 'fulfilled' )
-                                                      .catch ( () => state = 'rejected' );
-                                              return state
-                                        } // readPromiseState func.
-                                     
-
-
-                                    /**
-                                     * Iterates over the promises and calls the callback function for each.
-                                     * Callback function will receive an object with the following properties:
-                                     * - value: the value associated with the promise
-                                     * - done: the promise resolve function
-                                     * - cancel: the promise reject function
-                                     * - timeout: a function that sets the timeout on the promise
-                                     * @param {function} cbFn - callback function to be called for each promise
-                                     * @param {...any} args - additional arguments to be passed to the callback function
-                                     */
-                                      function each ( cbFn, ...args ) {
-                                              listOfPromiseObjects.forEach ( (prom,i) => cbFn ({
-                                                                                              value:list[i], 
-                                                                                              done: prom.done, 
-                                                                                              cancel: prom.cancel, 
-                                                                                              timeout: prom.timeout, 
-                                                                                              state: readPromiseState(prom.promise) 
-                                                                                          }, 
-                                                                                          ...args
-                                                                                        ));
-                                        } // each func.
-
-
-
-                                       /** @type {AskObject} */
-                                       const askObject = {
-                                                    promise    : Promise.all ( listOfPromises )
-                                                  , promises   : listOfPromiseObjects
-                                                  , done       : ( response )  => { listOfPromiseObjects.forEach ( o => o.done( response  ) );}
-                                                  , cancel     : ( response )  => { listOfPromiseObjects.forEach ( o => o.cancel( response ) );}
-                                                  , each
-                                                  , onComplete : onComplete
-                                                  , timeout    : () => {}
+                                      // The original input list is kept on the askObject so that
+                                      // `each` can read the per-item value via `this._list[i]`
+                                      // instead of capturing the list via closure. (Capturing
+                                      // the list in a closure that's stored on the askObject
+                                      // would create an unreachable cycle that V8 doesn't
+                                      // collect.)
+                                      /** @type {AskObject} */
+                                      const askObject = {
+                                                    promise       : Promise.all ( listOfPromises )
+                                                  , promises      : listOfPromiseObjects
+                                                  , _list         : list
+                                                  , _activeTimer  : null
+                                                  , each          : () => {}
+                                                  , onComplete    : onComplete
+                                                  , timeout       : () => {}
                                               };
-                                      askObject.timeout = _timeout ( true, askObject );
+                                      // Wrap list-level done/cancel so they clear the list-level
+                                      // timer (if any) before settling every sub-promise. Per-item
+                                      // timers are cleared by the per-item wrappers in _singlePromise.
+                                      // These are regular functions using `this` (not arrow functions
+                                      // capturing askObject), so the askObject can be garbage-
+                                      // collected when the user drops the reference.
+                                      askObject.done   = function ( response ) {
+                                          if (this._activeTimer !== null) { clearTimeout(this._activeTimer); this._activeTimer = null; }
+                                          this.promises.forEach ( o => o.done( response ) );
+                                      };
+                                      askObject.cancel = function ( response ) {
+                                          if (this._activeTimer !== null) { clearTimeout(this._activeTimer); this._activeTimer = null; }
+                                          this.promises.forEach ( o => o.cancel( response ) );
+                                      };
+                                      // `each` uses `this` (no closure capture of the list or
+                                      // the array) so dropping the askObject releases everything.
+                                      askObject.each = function ( cbFn, ...args ) {
+                                          this.promises.forEach ( ( prom, i ) => cbFn ({
+                                                                                          value: this._list[i],
+                                                                                          done:  prom.done,
+                                                                                          cancel: prom.cancel,
+                                                                                          timeout: prom.timeout
+                                                                                      },
+                                                                                      i,
+                                                                                      ...args
+                                                                                    ));
+                                      };
+
+                                      askObject.timeout = _timeout ( true );
                                       return askObject
      } // _manyPromises func.
 
 
 
   /**
-   * Creates a function that will be called after promise is resolved
-   * @param {Promise} x - The promise
-   * @returns {Function} Function to be called after promise is resolved
+   * Builds an `onComplete` sugar function for the given promise. Internal.
+   * @private
+   * @param {Promise<any>} x - The promise to attach handlers to.
+   * @returns {(fx: (result: any) => void, rejectFx?: ((error: any) => void) | null) => void}
+   *   Function `(fx, rejectFx?) => void`. When `rejectFx` is omitted / `null`,
+   *   only the resolve branch is attached (`x.then(fx)`); otherwise both
+   *   branches are attached (`x.then(fx, rejectFx)`).
    */
   function _after ( x ) {
-  /**
-   * @function onComplete
-   * @description Function to be called after promise is resolved
-   * @param {Function} fx - Function to be called after promise is resolved
-   * @param {Function|null} [rejectFx] - Optional. Function to be called if promise is rejected
-   * @returns {void} - Nothing
-   */
   return function onComplete ( fx, rejectFx=null ) {
                   if ( rejectFx === null ) x.then ( res => fx(res) );
                   else                     x.then ( res => fx(res) , res => rejectFx(res)  );
@@ -236,51 +343,91 @@
 
 
   /**
-   * Creates a timeout function for the given promise(s) in the AskObject.
-   * If `isList` is true, the timeout is applied to the collection of promises,
-   * otherwise it is applied to a single promise.
-   * 
-   * When the timeout duration (`ttl`) is reached before the promise(s) resolve,
-   * the provided expiration message (`expMsg`) is returned.
-   * 
-   * @param {boolean} isList - Flag indicating if the AskObject contains multiple promises.
-   * @param {AskObject} askObject - The AskObject containing the promise(s) to apply the timeout to.
-   * @returns {Function} - A function that sets a timeout on the promise(s) and updates the AskObject.
+   * Builds a `timeout(ttl, expMsg)` factory for an `AskObject`. The returned
+   * function must be called as a method on the `AskObject`
+   * (`askObject.timeout(ttl, expMsg)`); it uses `this` to wire the timer
+   * into the receiving askObject. On expiry, the task settles with `expMsg`:
+   * `onComplete` is rewired to return the fallback, and the underlying
+   * `askObject.promise` is also settled with `expMsg` (so `await promise`
+   * and `onComplete(...)` agree).
+   * @private
+   * @param {boolean} isList - `true` to race the `Promise.all` of every
+   *   sub-promise, `false` to race the single promise.
+   * @returns {(ttl: number, expMsg: any) => AskObject} A function to be
+   *   invoked as a method on the `AskObject`; returns the same `AskObject`
+   *   so calls can be chained.
    */
+  function _timeout ( isList ) {
+    /**
+     * Arms a TTL timer on the underlying promise(s) and rewires the
+     * `AskObject`'s `onComplete` to the race result.
+     *
+     * Note: this function uses `this` (set by the caller to the askObject)
+     * and never captures it in a closure. The setTimeout callback reaches
+     * the askObject only via a WeakRef, so dropping the askObject reference
+     * allows V8 to collect it even if the timer hasn't fired yet. (V8's
+     * tracing GC does NOT reclaim cycles where a closure on the object
+     * captures the object — that's why every method on the askObject uses
+     * `this` or a WeakRef, never a direct closure capture.)
+     *
+     * @param {number} ttl - Timeout duration in milliseconds.
+     * @param {any} expMsg - Value that resolves the race when the timer
+     *   fires before the underlying promise(s).
+     * @returns {AskObject} The same `AskObject` (for chaining).
+     */
+    return function timeout( ttl, expMsg ) {
+              const askObjectRef = new WeakRef(this);
 
-  function _timeout ( isList, askObject ) {
-        let main;
-        
-        if ( isList ) main = Promise.all( askObject.promises.map ( o => o.promise ) );
-        else          main = askObject.promise;
+              // `main` is the underlying promise(s) the timer races against.
+              // In single mode it's the same promise as `this.promise`;
+              // in list mode it's a fresh `Promise.all` over every sub-promise.
+              let main;
+              if ( isList ) main = Promise.all( this.promises.map ( o => o.promise ) );
+              else          main = this.promise;
 
-        /**
-         * @function timeout
-         * @description Sets timeout on promise
-         * @param {number} ttl - Timeout in milliseconds
-         * @param {string|number} expMsg - Message to be returned if timeout occurs
-         * @returns {AskObject} - Object with promise and related helper functions
-         */
-        return function timeout( ttl, expMsg ) {
-                  let timer;
-                  let timeout = new Promise ( (resolve, reject) => {
-                                          timer = setTimeout ( () => {
-                                                          resolve ( expMsg );
-                                                          Promise.resolve ( main );
-                                                      }, ttl);
-                                      }); // timeout
-                  main.then ( () => clearTimeout(timer)   );                
-                  askObject [ 'onComplete'] = _after ( Promise.race ([main, timeout])   );
-                  return askObject
-              }
-      } // _timeout func.
+              let timer;
+              const timeout = new Promise ( (resolve, reject) => {
+                                      timer = setTimeout ( () => {
+                                                      // Settle the underlying task with the fallback so
+                                                      // `task.promise` returns a regular result and any
+                                                      // in-flight resources (hung fetches, pending timers)
+                                                      // are released instead of leaking. No-op if the
+                                                      // askObject has already been garbage-collected.
+                                                      const obj = askObjectRef.deref();
+                                                      if (obj !== undefined) obj.done(expMsg);
+                                                      resolve(expMsg);
+                                                  }, ttl);
+                                  }); // timeout
+              // Hand the timer handle to the askObject so the wrapped
+              // done/cancel can release the askObject immediately on
+              // settlement, instead of waiting for the timer to fire.
+              this._activeTimer = timer;
+              main.then ( () => clearTimeout(timer)   );
+              this [ 'onComplete'] = _after ( Promise.race ([main, timeout])   );
+              return this
+          }
+  } // _timeout func.
 
   function findType ( x ) {
       if ( x == null              )   return 'simple' // null and undefined
       if ( x.nodeType             )   return 'simple' // DOM node
       if ( x instanceof Array     )   return 'array'
-      if ( typeof x === 'object'  )   return 'object'
-      return 'simple'   // number, bigint, string, boolean, symbol, function 
+      if ( typeof x === 'object'  ) {
+          // Built-in object types whose data lives outside the own-enumerable-string-key
+          // model that walk uses. Treated as 'simple' so the value is preserved by
+          // reference (same contract as functions and DOM nodes).
+          if ( x instanceof Date        )   return 'simple'
+          if ( x instanceof RegExp      )   return 'simple'
+          if ( x instanceof Map         )   return 'simple'
+          if ( x instanceof Set         )   return 'simple'
+          if ( x instanceof WeakMap     )   return 'simple'
+          if ( x instanceof WeakSet     )   return 'simple'
+          if ( x instanceof ArrayBuffer )   return 'simple'
+          if ( x instanceof DataView    )   return 'simple'
+          if ( ArrayBuffer.isView ( x ) )   return 'simple' // Typed arrays (Uint8Array, Float32Array, ...)
+          return 'object'
+      }
+      return 'simple'   // number, bigint, string, boolean, symbol, function
    } // findType func.
 
   function validateForInsertion ( k, result ) {
@@ -291,57 +438,82 @@
       else              return false
   } // validateForInsertion func.
 
+  // Plain assignment of a '__proto__' key triggers the inherited setter and
+  // replaces the prototype of 'target' instead of creating an own property.
+  function setKey ( target, k, value ) {
+      if ( k === '__proto__' )   Object.defineProperty ( target, k, { value, enumerable:true, writable:true, configurable:true });
+      else                       target[k] = value;
+  } // setKey func.
+
   function copyObject ( resource, result, extend, cb, breadcrumbs, ...args ) {
-      let 
+      let
             [ keyCallback, objectCallback ] = cb
           , keys = Object.keys ( resource )
           ;
-          
+
       keys.forEach ( k => {
-                      let 
+                      let
                             type = findType(resource[k])
                           , item  = resource[k]
-                          , resultIsArray = (findType (result) === 'array') 
+                          , resultIsArray = (findType (result) === 'array')
                           , keyNumber = !isNaN ( k )
                           , IGNORE = Symbol ( 'ignore___' )
-                          , isRoot = (breadcrumbs === 'root' && k === 'root' )
-                          , br = isRoot ? 'root' : `${breadcrumbs}/${k}`
+                          , br = `${breadcrumbs}/${k}`
                           ;
-          
+
                       if ( type !== 'simple' && objectCallback ) {
                                           item = objectCallback ({ value:item, key:k, breadcrumbs: br, IGNORE }, ...args );
                                           if ( item === IGNORE )   return
                                           type = findType ( item );
                           }
 
-                      if ( isRoot ) {  
-                                  extend.push ( generateList ( item, result,  extend, cb, br, args )   );
-                                  return
-                          }
-                      
                       if ( type === 'simple' ) {
                                       if ( !keyCallback ) {
-                                              if ( !isRoot )   result[k] = item;
+                                              const canInsert = validateForInsertion ( k, result );  // Find if it's array or object?
+                                              if ( canInsert )    result.push ( item );     // It's an array
+                                              else                setKey ( result, k, item ); // It's an object
                                               return
                                           }
                                       let keyRes = keyCallback ({ value:item, key:k, breadcrumbs: br, IGNORE }, ...args );
                                       if ( keyRes === IGNORE )   return
-                                      const canInsert = validateForInsertion ( k, result );  // Find if it's array or object?
-                                      if ( canInsert )    result.push ( keyRes ); // It's an array
-                                      else                result [k] = keyRes;    // It's an object
+                                      // Re-type the returned value. A plain object/array returned from
+                                      // keyCallback is walked into via the same extend mechanism used for
+                                      // original nested values; built-in types (Date, Map, Set, etc.) are
+                                      // still 'simple' and stored by reference.
+                                      const newType = findType ( keyRes );
+                                      if ( newType === 'simple' ) {
+                                              const canInsert = validateForInsertion ( k, result );  // Find if it's array or object?
+                                              if ( canInsert )    result.push ( keyRes );      // It's an array
+                                              else                setKey ( result, k, keyRes ); // It's an object
+                                              return
+                                          }
+                                      if ( newType === 'object' ) {
+                                              const newObject = {};
+                                              if ( resultIsArray && keyNumber )   result.push ( newObject );
+                                              else                                setKey ( result, k, newObject );
+                                              extend.push ( generateList ( keyRes, newObject, extend, cb, br, args ) );
+                                              return
+                                          }
+                                      if ( newType === 'array' ) {
+                                              const newArray = [];
+                                              if ( resultIsArray && keyNumber )   result.push ( newArray );
+                                              else                                setKey ( result, k, newArray );
+                                              extend.push ( generateList ( keyRes, newArray, extend, cb, br, args ) );
+                                              return
+                                          }
                           }
-                          
+
                       if ( type === 'object' ) {
                               const newObject = {};
                               if ( resultIsArray && keyNumber )   result.push ( newObject );
-                              else                                result[k] = newObject;
+                              else                                setKey ( result, k, newObject );
                               extend.push ( generateList ( item, newObject,  extend, cb, br, args ) );
                          }
-                         
+
                       if ( type === 'array' ) {
                               const newArray = [];
                               if ( resultIsArray && keyNumber )   result.push ( newArray );
-                              else                                result[k] = newArray;
+                              else                                setKey ( result, k, newArray );
                               extend.push ( generateList( item, newArray, extend, cb, br, args ) );
                           }
               });
@@ -350,40 +522,88 @@
 
 
   function* generateList ( data, location, ex, callback, breadcrumbs, args ) {
-      yield copyObject ( data , location, ex, callback, breadcrumbs, ...args );  
+      yield copyObject ( data , location, ex, callback, breadcrumbs, ...args );
   } // generateList func.
 
   /**
+   *  Sentinel value passed to callbacks. Return it from a callback to drop
+   *  the current key from the result. A fresh symbol is created on every
+   *  callback call, so always return the value that was handed to you.
+   *
+   *  @typedef {symbol} IgnoreToken
+   */
+
+  /**
+   *  Arguments object received by both `keyCallback` and `objectCallback`.
+   *
+   *  @typedef {object} CallbackArgs
+   *  @property {*}          value        - The current value being processed.
+   *  @property {string}     key          - Property key as a string.
+   *  @property {string}     breadcrumbs  - Slash-delimited path to the current key, starting with `root` (e.g. `"root/props/age"`).
+   *  @property {IgnoreToken} IGNORE      - Return this from the callback to drop the current key from the result.
+   */
+
+  /**
+   *  Called once per primitive property (string, number, bigint, boolean,
+   *  symbol, null, undefined, function, Date, RegExp, Map, Set, WeakMap,
+   *  WeakSet, ArrayBuffer, DataView, typed arrays, DOM nodes).
+   *
+   *  Return the new value to store, or `IGNORE` to drop the key:
+   *    - return a primitive (or a built-in like `Date`/`Map`/`Set`) → stored as-is by reference;
+   *    - return a plain object or array → walk continues into it with the other callback applied to its children;
+   *    - return `IGNORE` → that key is dropped from the result.
+   *
+   *  @callback KeyCallback
+   *  @param {CallbackArgs} args
+   *  @param {...*}         rest - Any extra arguments passed to `walk()` are forwarded to the callback.
+   *  @returns {*}
+   */
+
+  /**
+   *  Called once per object or array property, including the root.
+   *  The returned value becomes the new value at that key:
+   *    - return an object or array → walk continues into it with the other callbacks;
+   *    - return a primitive        → it is stored as the value, no further walking;
+   *    - return `IGNORE`           → the key is dropped from the result.
+   *
+   *  @callback ObjectCallback
+   *  @param {CallbackArgs} args
+   *  @param {...*}         rest
+   *  @returns {*}
+   */
+
+  /**
    *  @typedef {object} Options
-   *  @property {any} data - Required. Any JS data structure that will be copied.
-   *  @property {function} [keyCallback] - Optional. Function executed on each primitive property.
-   *  @property {function} [objectCallback] - Optional. Function executed on each object property.
+   *  @property {*}             data           - Required. Any JS data structure that will be copied.
+   *  @property {KeyCallback}    [keyCallback]    - Optional. Executed on each primitive property.
+   *  @property {ObjectCallback} [objectCallback] - Optional. Executed on each object/array property, including the root.
    */
 
 
   /**
    *  Walk
-   * 
-   *  Creates an immutable copies of deep javascript data structures. 
-   *  Executes callback functions on every object/array property(objectCallback) and every primitive property(keyCallback). 
-   *  Callbacks can modify result-object by masking, filter or substitute values during the copy process.
-   *  
+   *
+   *  Creates an immutable copy of a deep JavaScript data structure.
+   *  Two optional callbacks run during the walk and can mask, filter, or
+   *  substitute values as the result is built.
+   *
    *  @function walk
-   *  @param {Options} options   - Required. Object with required 'data' property and two optional callback functions: keyCallback and objectCallback. 
-   *  @param {...any} args - Optional. Additional arguments that could be used in the callback functions.
-   *  @returns {any} - Created immutable copy of the 'options.data' property.
+   *  @param {Options} options   - Required. Object with required `data` property and two optional callback functions: `keyCallback` and `objectCallback`.
+   *  @param {...*}    args      - Optional. Additional arguments forwarded to both callbacks.
+   *  @returns {*}               - Created immutable copy of `options.data`.
    *  @example
-   *  // keyCallbackFn - function executed on each primitive property
-   *  // objectCallbackFn - function executed on each object property
-   *  let result = walk ({ data:x, keyCallback:keyCallbackFn, objectCallback : objectCallbackFn })
-   * 
-   * 
-   *  // NOTE: objectCallback is executed before keyCallback! 
-   *  // If you modify object with objectCallback, then keyCallback 
-   *  // will be executed on the result of objectCallback
+   *  let result = walk ({
+   *      data: someData,
+   *      keyCallback:    keyCallbackFn,
+   *      objectCallback: objectCallbackFn
+   *  })
+   *
+   *  // Note: objectCallback is executed before keyCallback.
+   *  // If you modify an object with objectCallback, keyCallback will be
+   *  // executed on the result of objectCallback.
    */
   function walk (options,...args) {
-      let 
+      let
             { data:origin, keyCallback, objectCallback } = options
           , type = findType ( origin )
           , result
@@ -392,28 +612,36 @@
           , cb = [ keyCallback, objectCallback ]
           ;
 
+      if ( type !== 'simple' && objectCallback ) {   // Root object callback. Executed before the result is allocated, so it can replace the root with anything.
+              const IGNORE = Symbol ( 'ignore___' );
+              const replacement = objectCallback ({ value:origin, key:'root', breadcrumbs, IGNORE }, ...args );
+              if ( replacement === IGNORE )   return ( type === 'array' ) ? [] : {}
+              origin = replacement;
+              type = findType ( origin );
+          }
+
       switch ( type ) {
               case 'array'  :
                                   result = [];
-                                  copyObject ( {root:origin}, result, extend, cb, breadcrumbs, ...args );
+                                  copyObject ( origin, result, extend, cb, breadcrumbs, ...args );
                                   break
               case 'object' :
                                   result = {};
-                                  copyObject ( {root:origin}, result, extend, cb, breadcrumbs, ...args );
+                                  copyObject ( origin, result, extend, cb, breadcrumbs, ...args );
                                   break
               case 'simple' :
                                   return origin
           } // switch type
-          
+
       for ( const plus of extend ) {   plus.next(); }
       return result
   } // walk func.
 
   function notice () {
       
-                      let 
-                            scroll     = {'*':[]}  // General events with their subscribers
-                          , scrollOnce = {}  // Single events with their subscribers
+                      let
+                            scroll     = Object.assign ( Object.create(null), {'*':[]} )  // General events with their subscribers. Null prototype - event names like '__proto__' are safe
+                          , scrollOnce = Object.create ( null )  // Single events with their subscribers
                           , ignore     = new Set ()  // Ignore event names ( general and single )
                           , debugFlag  = false 
                           , debugHeader = ''
@@ -425,6 +653,7 @@
                        *  @returns void
                        */
                       function on ( e, fn ) {
+                              if ( typeof fn !== 'function' )   return   // Silently no-op on bad input — see Changelog
                               if ( !scroll[e] ) scroll[e] = [];
                               scroll[e].push ( fn );
                           } // on func.
@@ -436,6 +665,7 @@
                        */
                       function once ( e, fn ) {
                               if ( e === '*' )   return  // The wildcard '*' doesn't work for 'once' events
+                              if ( typeof fn !== 'function' )   return   // Silently no-op on bad input — see Changelog
                               if ( !scrollOnce[e] )   scrollOnce[e] = [];
                               scrollOnce[e].push ( fn );
                           } // once func.
@@ -452,20 +682,21 @@
                               if ( fx ) {   // fx is optional
                                       if ( scroll[e]     )  scroll[e]     = scroll[e].filter     ( fn => fn !== fx );
                                       if ( scrollOnce[e] )  scrollOnce[e] = scrollOnce[e].filter ( fn => fn !== fx );
-                                      if ( scroll[e] && scroll[e].length         === 0 )   delete scroll[e];
-                                      if ( scrollOnce[e] && scrollOnce[e].length === 0 )   delete scroll[e];
+                                      if ( e !== '*' && scroll[e] && scroll[e].length === 0 )   delete scroll[e];   // scroll['*'] must always exist - 'emit' relies on it
+                                      if ( scrollOnce[e] && scrollOnce[e].length === 0 )   delete scrollOnce[e];
                                       return
                                   }
                               if ( scrollOnce[e] )   delete scrollOnce[e];
-                              if ( scroll[e]     )   delete scroll[e];
+                              if ( e === '*'     )   scroll['*'] = [];   // scroll['*'] must always exist - 'emit' relies on it
+                              else if ( scroll[e] )   delete scroll[e];
                           } // off func.
                       /**
                        * Resets all event-related data structures.
                        * Clears all general and single event subscriptions, as well as the ignore list.
                        */
                       function reset () {
-                              scroll     = {'*':[]};
-                              scrollOnce = {};
+                              scroll     = Object.assign ( Object.create(null), {'*':[]} );
+                              scrollOnce = Object.create ( null );
                               ignore     = new Set ();
                           } // reset func.
                       /**
@@ -482,15 +713,19 @@
                           } // debug func.
                       /**
                        * Triggers an event and executes all associated functions.
-                       * 
+                       *
+                       * Exceptions thrown by individual subscribers are caught and
+                       * logged to `console.error` so that one misbehaving callback does
+                       * not abort the rest of the chain. The `STOP` return-string
+                       * contract is unchanged.
+                       *
                        * @param {string|Symbol} e - Name of the event to be triggered.
                        * @param {...*} [args] - Optional. Arguments to be passed to the callback functions.
                        * @returns void
                        */
-                      function emit () {
-                              const [ e, ...args ] = arguments;
-                              if ( debugFlag ) {  
-                                          console.log ( `${debugHeader} Event "${e}" was triggered.`);
+                      function emit ( e, ...args ) {
+                              if ( debugFlag ) {
+                                          console.log ( `${debugHeader} Event "${String(e)}" was triggered.`);   // String() - event names can be Symbols
                                           if ( args.length > 0 ) {
                                               console.log ( 'Arguments:');
                                               console.log ( ...args );
@@ -498,33 +733,43 @@
                                           }
                                   }
 
+                              function safeCall ( fn, callArgs ) {
+                                          try   { return fn ( ...callArgs ) }
+                                          catch ( err ) {
+                                                  console.error ( 'notice: subscriber threw —', err );
+                                                  return undefined
+                                              }
+                                      } // safeCall func.
+
                               function exeCallback ( name ) {
                                           let stopped = false;
-                                          if ( name === '*' )   return
+                                          if ( name === '*' )   return   // 'emit("*")' iterates Reflect.ownKeys(scroll) which includes '*'; skip the meta-loop to avoid double-firing the wildcard
                                           if ( ignore.has(name) )   return
                                           scroll[name].every ( fn => {
-                                                              const r = fn ( ...args );
-                                                              if ( typeof(r) !== 'string'     )   return true
-                                                              if ( r.toUpperCase() === 'STOP' ) {  
+                                                              const r = safeCall ( fn, args );
+                                                              if ( typeof(r) !== 'string' )   return true
+                                                              if ( r.toUpperCase() === 'STOP' ) {
                                                                                                   stopped = true;
                                                                                                   return false
                                                                                       }
                                                               return true
                                                           });
-                                          if ( !stopped )   scroll['*'].forEach ( fn => fn(e,...args)  );
+                                          if ( !stopped )   scroll['*'].forEach ( fn => safeCall ( fn, [e, ...args] )  );
                                   } // exeCallback func.
 
                               if ( e === '*' ) {   // The wildcard '*' doesn't work for 'once' events
-                                          let evNames = Object.keys ( scroll );
+                                          let evNames = Reflect.ownKeys ( scroll );   // Reflect.ownKeys - event names can be Symbols
                                           evNames.forEach ( name => exeCallback(name)   );
                                           return
                                   }
                               if ( scrollOnce[e] ) {
                                           if ( ignore.has(e) )   return
-                                          scrollOnce[e].forEach ( fn => fn(...args)   );
-                                          delete scrollOnce[e];
+                                          const onceFns = scrollOnce[e];
+                                          delete scrollOnce[e];   // Delete before the calls, so handlers can re-register with 'once'
+                                          onceFns.forEach ( fn => safeCall ( fn, args )   );
+                                          if ( !scroll[e] )   scroll['*'].forEach ( fn => safeCall ( fn, [e, ...args] )  );   // Notify wildcard listeners; if regular subscribers exist, 'exeCallback' will do it
                                   }
-                              if ( scroll[e]     ) { 
+                              if ( scroll[e]     ) {
                                           exeCallback ( e );
                                   }
                           } // emit func.
@@ -549,9 +794,9 @@
                        */
                       function stop ( e ) {
                               if ( e === '*' ) {
-                                          const 
-                                                evNames     = Object.keys ( scroll )
-                                              , evOnceNames = Object.keys ( scrollOnce )
+                                          const
+                                                evNames     = Reflect.ownKeys ( scroll )   // Reflect.ownKeys - event names can be Symbols
+                                              , evOnceNames = Reflect.ownKeys ( scrollOnce )
                                               ;
                                           ignore = new Set ([ ...evOnceNames, ...evNames ]);
                                           return
@@ -571,53 +816,115 @@
                           }
   } // notice func.
 
+  /**
+   * Factory that produces the `effect(relations, fn, ...args)` API for a
+   * given shared `local`.
+   *
+   * @private
+   * @param {Object} l - The shared local object from `main()`. Holds the
+   *   storage map and the global call markers.
+   * @returns {Function} The `effect` constructor (see JSDoc below).
+   */
   function effectLib ( l ) {
   /**
-   * Registers a side effect function that is executed when any of the specified 
-   * signal states are updated.
+   * Registers a side effect that fires synchronously every time any of the
+   * specified signal states (or computeds) is `set`. The effect body is NOT
+   * called during setup — only on subsequent `set` calls on the relations.
    *
-   * @param {Array} relations - An array of signals that this effect depends on.
-   * @param {Function} fn - The side effect function to be executed when any of the signals change.
+   * @param {Array} relations - Signals this effect depends on. Each one
+   *   must expose a `.get()` method (states, computeds, anything that
+   *   follows the signals convention). Anything read inside `fn` that is not
+   *   in `relations` will NOT trigger the effect.
+   * @param {Function} fn - The side effect body. Called with `...args` as
+   *   arguments, where `args` is the rest passed to `effect`.
+   * @param {...any} args - Default arguments passed to every `fn` invocation.
+   *   Cannot be changed at fire time.
+   * @returns {void}
+   * @example
+   *   const count = h.state ( 0 )
+   *   h.effect ( [count], ( label ) => console.log ( `${label}: ${count.get ()}` ), 'tick' )
+   *   count.set ( 1 )   // -> "tick: 1"
    */
   return function effect ( relations, fn, ...args ) {
       const id = Symbol ( 'effect' );
       l.callID = id;
+      l.callType = l.EFFECT_CALL;    // Stable sentinel; see main.js — dep tracking checks this by reference
       l.storage[id] = { id, fn, defaultArgs: args };
-      relations.forEach ( signal => signal.get() );   // Register effect in signal state
-      l.callID = null;
+      try {
+          relations.forEach ( signal => signal.get() );   // Register effect in signal state
+      } finally {
+          // Reset the global call markers even if a relation's `get()` throws,
+          // otherwise a mid-setup exception would leak them and silently corrupt
+          // every subsequent `state.get()` in this signals instance.
+          l.callID = null;
+          l.callType = null;
+      }
   } // effect func.
   } // effectLib func.
 
+  /**
+   * Factory that produces the `state(initialValue, validation?)` API for a
+   * given shared `local` (the same `local` is passed to `effect` and
+   * `computed` so all three primitives share a single dep-tracking context).
+   *
+   * @private
+   * @param {Object} l - The shared local object from `main()`. Holds the
+   *   storage map and the global call markers (`callID` / `callType`).
+   * @returns {Function} The `state` constructor (see JSDoc below).
+   */
   function stateLib ( l ) {
 
 
   /**
    * Creates a reactive item with an initial value and optional validation function.
-   * 
+   *
+   * The `validation` function is called on the `initialValue` too — if it
+   * returns `false`, the constructor throws a `TypeError` (fail fast), since a
+   * state that violates its own contract is almost certainly a bug. Pass `false`
+   * (the default) or omit the argument to skip validation entirely.
+   *
    * @param {any} initialValue - The initial value of the item.
-   * @param {Function|boolean} [validation=false] - An optional validation function that takes a new value
+   * @param {Function|false} [validation=false] - An optional validation function that takes a new value
    * and returns a boolean indicating if the new value is valid. Defaults to false, which means no validation.
-   * 
+   *
    * @returns {Object} An object with `get`, `set` and `modify` methods:
    *  - `get`: Retrieves the current value of the item.
    *  - `set`: Attempts to update the item's value. If validation is provided and fails, returns false. Otherwise, returns true.
-   *  - `modify`: Accepts a function that takes the current value of the item and returns a new value. 
+   *  - `modify`: Accepts a function that takes the current value of the item and returns a new value.
    *    If validation is provided and fails, returns false. Otherwise, returns true.
    */
   function state ( initialValue, validation=false ) {
+      if ( validation && !validation ( initialValue ) ) {
+                  throw new TypeError ( 'signals: initial value failed validation' )
+              }
       const id = Symbol ( 'item' );
-      l.storage[id] = { id, value: structuredClone ( initialValue ) , validate: validation, deps: new Set(), effects: new Set() };
+      l.storage[id] = { id, value: clone ( initialValue ) , validate: validation, deps: new Set(), effects: new Set() };
   // TODO: Did promises have a place here?
   // TODO: What about dependency injection here or in computed and effect functions?
   // TODO: Can 'notes' get benefit from signals?
 
+      /**
+       * Attempts to update the state's value. The new value is deep-cloned
+       * via `structuredClone` (with a clear `TypeError` if it can't be cloned).
+       * If a `validation` function is configured and it returns `false`, the
+       * state is left unchanged and `set` returns `false`. On success, every
+       * computed that depends on this state is marked dirty, every effect
+       * that depends on this state is fired synchronously, and `set` returns
+       * `true`. The check is `oldValue !== newValue`-blind: setting the same
+       * value still fires dependents — by design, no deep-equality is run.
+       *
+       * @param {any} newValue - The new value. Must be cloneable (primitives,
+       *   plain objects, arrays, etc.). Functions and Symbols are rejected.
+       * @returns {boolean} `true` if the value was set, `false` if validation
+       *   rejected the new value.
+       */
       function set ( newValue ) {
                   const rec = l.storage[id];
                   if ( rec.validate) {
-                              if ( rec.validate && rec.validate ( newValue ) )  l.storage[id].value = structuredClone ( newValue );
+                              if ( rec.validate && rec.validate ( newValue ) )  l.storage[id].value = clone ( newValue );
                               else                                              return false
                           }
-                  else l.storage[id].value = structuredClone ( newValue );
+                  else l.storage[id].value = clone ( newValue );
                   for ( const val of l.storage[id].deps ) {
                               l.storage[val].dirty = true;
                       }
@@ -625,16 +932,34 @@
                               let { fn, defaultArgs } = l.storage[val];
                               fn ( ...defaultArgs  );
                       }
-                  return true                                            
+                  return true
               } // set func.
 
-  function get () {   
-                  if ( l.callID && l.callID.toString() === 'Symbol(effect)'   )   l.storage[id].effects.add ( l.callID );                          
-                  if ( l.callID && l.callID.toString() === 'Symbol(computed)' )   l.storage[id].deps.add ( l.callID );
+      /**
+       * Returns the current value of the state. As a side effect, if called
+       * from inside a `computed()` evaluation or an `effect()` setup, the
+       * call registers this state as a dep of the caller — that's how
+       * reactivity is wired.
+       *
+       * @returns {any} The current value.
+       */
+      function get () {
+                  if ( l.callType === l.EFFECT_CALL    )   l.storage[id].effects.add ( l.callID );
+                  if ( l.callType === l.COMPUTED_CALL )   l.storage[id].deps.add    ( l.callID );
                   return l.storage[id].value
               } // get func.
 
-  function modify ( fn ) {
+      /**
+       * Atomically updates the state's value by passing the current value to
+       * `fn` and using the return value as the new value. The state is left
+       * unchanged if the resulting value fails validation.
+       *
+       * @param {(currentValue: any) => any} fn - Transformer function.
+       * @returns {boolean} `true` if the value was set, `false` if validation
+       *   rejected the new value. If `fn` itself throws, the throw propagates
+       *   and the state is left unchanged.
+       */
+      function modify ( fn ) {
                   const oldValue = l.storage[id].value;
                   return set ( fn ( oldValue ) )
               } // modify func.
@@ -646,27 +971,93 @@
               // TODO: Destroy method for all elements : state, computed, effect
           }
   } // state func.
+
+  // Clone a value for storage. Most signal values are plain data (numbers,
+  // strings, arrays, plain objects) and `structuredClone` handles those. For
+  // values that can't be cloned (functions, Symbols, etc.) we throw a
+  // `TypeError` with a clear message instead of the raw `DataCloneError` so
+  // the call site is obvious.
+  /**
+   * Deep-clone a state value, throwing a `TypeError` if cloning fails.
+   * @private
+   * @param {any} value - The value to clone.
+   * @returns {any} A deep copy of `value`.
+   * @throws {TypeError} If `structuredClone` cannot clone `value` (e.g. it is a
+   *   function, a Symbol, or holds a non-cloneable child).
+   */
+  function clone ( value ) {
+      try { return structuredClone ( value ) }
+      catch ( e ) {
+          throw new TypeError ( `signals: state value cannot be cloned (${e && e.message ? e.message : e})` )
+      }
+  }
+
   return state
   } // stateLib func.
 
+  /**
+   * Factory that produces the `computed(fn, ...args)` API for a given shared
+   * `local`.
+   *
+   * @private
+   * @param {Object} l - The shared local object from `main()`. Holds the
+   *   storage map and the global call markers.
+   * @returns {Function} The `computed` constructor (see JSDoc below).
+   */
   function computedLib ( l ) {
   /**
-  * Creates a computed reactive item that derives its value from a given function.
-  * 
-  * @param {Function} fn - A function that returns a value of the computed item. 
-  * @returns {Object} An object with a `get` method:
-  *  - `get`: Retrieves the current value of the computed item. If the computed item is marked as dirty,
-  *    it recalculates the value using the provided function.
-  */
+   * Creates a computed reactive item that derives its value from `fn`. The
+   * value is lazy: `fn` runs once at construction (with the constructor's
+   * `args`), and again on each `.get()` only after a dep has been marked
+   * dirty.
+   *
+   * If `fn` throws at construction time, the throw propagates and no
+   * computed is registered (the global call markers are still reset; see
+   * `states.js` for the matching fix on the `state` side).
+   *
+   * @param {Function} fn - A function that returns the computed value. Will
+   *   be re-invoked when any dep is marked dirty.
+   * @param {...any} args - Default arguments. Used when `.get()` is called
+   *   with no arguments; otherwise `.get()`'s arguments are forwarded to
+   *   `fn`. This makes the computed both memoized-by-deps (no args) and
+   *   parameterized (with args).
+   * @returns {Object} A computed object with a single `get` method.
+   * @example
+   *   const a = h.state ( 2 )
+   *   const double = h.computed ( x => a.get () * 2, 0 )
+   *   double.get ()       // -> 4   (default args = [0], fn(0) returns 4)
+   *   double.get ( 10 )   // -> 20  (override args, fn(10) returns 20)
+   */
   return function computed ( fn, ...args ) {
              const id = Symbol ( 'computed' );
              l.callID = id;
-             l.storage[id] = { id, value:fn(...args), fn, effects: new Set(), dirty: false, defaultArgs: args };
-             l.callID = null;
-             
-             return { 
+             l.callType = l.COMPUTED_CALL;    // Stable sentinel; see main.js — dep tracking checks this by reference
+             try {
+                         l.storage[id] = { id, value:fn(...args), fn, effects: new Set(), dirty: false, defaultArgs: args };
+             } finally {
+                         // Reset the global call markers even if `fn(...args)` throws,
+                         // otherwise a mid-construction exception would leak them and
+                         // silently corrupt every subsequent `state.get()` in this
+                         // signals instance.
+                         l.callID = null;
+                         l.callType = null;
+             }
+
+             return {
+                     /**
+                      * Returns the computed value, recomputing if any dep is
+                      * dirty. Side effects:
+                      *  - If called from inside an `effect()` setup, this computed
+                      *    is registered as a dep of that effect.
+                      *  - If called from a non-effect context (callType is null),
+                      *    every effect registered on this computed is fired
+                      *    synchronously — this is the lazy-evaluation contract.
+                      * @param {...any} args - Override the default args for this
+                      *   call. If omitted, the constructor's `...args` is used.
+                      * @returns {any} The (possibly just-recomputed) value.
+                      */
                      get: ( ...args ) => {
-                                 if ( l.callID && l.callID.toString() === 'Symbol(effect)'   )   l.storage[id].effects.add ( l.callID );
+                                 if ( l.callType === l.EFFECT_CALL )   l.storage[id].effects.add ( l.callID );
                                  if ( !l.callID ) {
                                              for ( const val of l.storage[id].effects ) {
                                                          let { fn, defaultArgs } = l.storage[val];
@@ -676,10 +1067,11 @@
                                  let rec = l.storage[id];
                                  if ( args.length === 0 )   args = rec.defaultArgs;
                                  if ( rec.dirty ) rec.value = rec.fn (...args);
-                                 return rec.value 
+                                 return rec.value
                              }
                  }
-  }} // computed func.
+  } // computed func.
+  } // computedLib func.
 
   /**
    *    Signals - A simple reactivity system.
@@ -690,24 +1082,54 @@
 
 
 
+  /**
+   * Creates a new, independent signals instance. Each call returns a fresh
+   * instance with its own `state` / `computed` / `effect` API and its own
+   * internal `storage`; instances do not share state.
+   *
+   * @returns {Object} A signals API with the three primitives:
+   *  - `state(initialValue, validation?)` — create a reactive cell.
+   *  - `computed(fn, ...args)` — create a derived, lazy reactive value.
+   *  - `effect(relations, fn, ...args)` — register a side effect on the
+   *    given relations.
+   * @example
+   *   const signals = require ( '@peter.naydenov/signals' )
+   *   const h = signals ()
+   *   const count = h.state ( 0 )
+   *   h.effect ( [count], () => console.log ( 'count changed' ) )
+   *   count.set ( 1 )     // -> "count changed"
+   */
   function main () {
       /**
        * A local storage for reactive items.
-       * 
-       * @type {Object} 
-       * @property {Object} storage - A map of reactive items.
+       *
+       * `callID` and `callType` together identify what kind of call is in
+       * progress (if any). `callID` is the symbol id of the effect/computed
+       * being evaluated; `callType` is a stable sentinel (one of
+       * `EFFECT_CALL` / `COMPUTED_CALL`) so dep tracking does not depend on
+       * the description of a `Symbol` (which would break if anyone ever
+       * renamed the `Symbol('effect')` / `Symbol('computed')` literals).
+       *
+       * @type {Object}
+       * @property {Object}  storage - A map of reactive items.
        * @property {null|Symbol} callID - A unique identifier for the current call.
+       * @property {null|Symbol} callType - Stable sentinel identifying the call kind.
+       * @property {Symbol} EFFECT_CALL - Sentinel set while an effect is being registered.
+       * @property {Symbol} COMPUTED_CALL - Sentinel set while a computed is being registered.
        */
       const local = {
-                  storage : {},
-                  callID : null
+                  storage      : {}
+              ,   callID       : null
+              ,   callType     : null
+              ,   EFFECT_CALL    : Symbol ( 'signals-effect-call' )
+              ,   COMPUTED_CALL : Symbol ( 'signals-computed-call' )
               };
 
       /**
        * Creates the main API object.
-       * 
+       *
        * @returns {Object} An object with `state`, `computed` and `effect` methods.
-       * 
+       *
        * @property {function} state - Creates a reactive item with an initial value and optional validation.
        * @property {function} computed - Creates a computed reactive item with a function that returns its value.
        * @property {function} effect - Creates an effect reactive item with a function that is called immediately after any of its dependencies change.

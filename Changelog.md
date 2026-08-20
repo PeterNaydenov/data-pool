@@ -1,5 +1,11 @@
 # Release History
 
+### 2.2.1 ( 2026-08-20 )
+- [x] Dependency update. @peter.naydenov/notice@2.5.0;
+- [x] Dependency update. @peter.naydenov/walk@6.0.0;
+- [x] Dependency update. @peter.naydenov/signals@1.3.0;
+- [x] Dependency update. ask-for-promise@3.2.0;
+
 
 
 ### 2.2.0 ( 2026-07-30 )

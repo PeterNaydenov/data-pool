@@ -1,5 +1,12 @@
 # Release History
 
+
+
+### 2.2.2 ( 2026-08-25 )
+- [x] Dependency update. @peter.naydenov/signals@1.3.1;
+
+
+
 ### 2.2.1 ( 2026-08-20 )
 - [x] Dependency update. @peter.naydenov/notice@2.5.0;
 - [x] Dependency update. @peter.naydenov/walk@6.0.0;

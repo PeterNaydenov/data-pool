@@ -2,6 +2,12 @@
 
 
 
+### 2.2.3 ( 2026-09-27 )
+- [x] Dependency update. @peter.naydenov/walk@6.1.0;
+- [x] Dependency update. @peter.naydenov/signals@1.4.0;
+
+
+
 ### 2.2.2 ( 2026-08-25 )
 - [x] Dependency update. @peter.naydenov/signals@1.3.1;
 
